@@ -7,6 +7,7 @@
 */
 "voice" = "语音";
 "conferenece" = "多人视频";
+"confereneceAudio" = "多人语音";
 "video" = "视频";
 "inviteInfo" = "邀请您进行%@通话";
 "Huangup" = "挂断";
@@ -22,3 +23,4 @@
 "receiveCallInviteprompt" = "邀请你进行音视频通话";
 "remoteUnmute" = "对方打开了音频";
 "remoteMute" = "对方关闭了音频";
+"calling" = "等待接听...";

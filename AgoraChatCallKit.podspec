@@ -20,6 +20,7 @@ Pod::Spec.new do |s|
       'Classes/Store/EaseCallConfig.h',
       'Classes/AgoraChatCallKit.h',
     ]
+    s.static_framework = true
     s.resources = 'Assets/EaseCall.bundle'
     s.dependency 'Agora_Chat_iOS'
     s.dependency 'Masonry'

@@ -76,14 +76,14 @@
 - (void)setUsers:(NSMutableDictionary<NSString *,EaseCallUser *> *)users
 {
     _users = [users mutableCopy];
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"EaseCallUserUpdated" object:nil];
+    [NSNotificationCenter.defaultCenter postNotificationName:@"EaseCallUserUpdated" object:nil];
 }
 
 - (void)setUser:(NSString*)aUser info:(EaseCallUser*)aInfo
 {
     if(aUser.length > 0 && aInfo) {
         [self.users setObject:aInfo forKey:aUser];
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"EaseCallUserUpdated" object:nil];
+        [NSNotificationCenter.defaultCenter postNotificationName:@"EaseCallUserUpdated" object:nil];
     }
 }
 

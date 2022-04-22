@@ -29,7 +29,7 @@
  * @param users                    当前会议中已存在的成员及已邀请的成员
  * @param aExt                      邀请中的扩展信息
  */
-- (void)multiCallDidInvitingWithCurVC:(UIViewController*_Nonnull)vc excludeUsers:(NSArray<NSString*> *_Nullable)users ext:(NSDictionary*_Nullable)aExt;
+- (void)multiCallDidInvitingWithCurVC:(UIViewController*_Nonnull)vc callType:(EaseCallType)callType excludeUsers:(NSArray<NSString*> *_Nullable)users ext:(NSDictionary*_Nullable)aExt;
 /**
  * 被叫开始振铃时，触发该回调
  * @param aType         通话类型
@@ -86,8 +86,7 @@
  * @param aExt              扩展信息，可添加如群组ID等信息
  * @param aCompletionBlock 完成回调
  */
-
-- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,EaseCallError*_Nullable aError))aCompletionBlock;
+- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers callType:(EaseCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,EaseCallError*_Nullable aError))aCompletionBlock;
 
 /**
  * 获取EaseCallKit的配置
@@ -107,6 +106,8 @@
  * @param aChannel              对应的频道名称
  */
 - (void)setUsers:(NSDictionary<NSNumber*,NSString*>*_Nonnull)aUsers channelName:(NSString*_Nonnull)aChannel;
+
+- (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
 
 - (void)pushRegistry:(nonnull PKPushRegistry *)registry didUpdatePushCredentials:(nonnull PKPushCredentials *)pushCredentials forType:(nonnull PKPushType)type;
 

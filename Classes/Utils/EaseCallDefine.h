@@ -10,9 +10,10 @@
 #define EaseCallDefine_h
 // 通话类型
 typedef NS_ENUM(NSInteger,EaseCallType) {
-    EaseCallType1v1Audio,// 1v1语音
-    EaseCallType1v1Video,// 1v1视频
-    EaseCallTypeMulti// 多人通话
+    EaseCallType1v1Audio,       // 1v1语音
+    EaseCallType1v1Video,       // 1v1视频
+    EaseCallTypeMulti,          // 多人通话
+    EaseCallTypeMultiAudio,     // 多人语音通话
 };
 
 //通话结束原因

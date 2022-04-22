@@ -6,7 +6,8 @@
   
 */
 "voice" = "voice";
-"conferenece" = "conferenece";
+"conferenece" = " video conferenece";
+"confereneceAudio" = "voice conferenece";
 "video" = "video";
 "inviteInfo" = "Invite you to a %@ call";
 "Huangup" = "Hang up";
@@ -22,3 +23,4 @@
 "receiveCallInviteprompt" = "invited you to a video call";
 "remoteUnmute" = "The other party unmuted";
 "remoteMute" = "he other party muted";
+"calling" = "Calling...";

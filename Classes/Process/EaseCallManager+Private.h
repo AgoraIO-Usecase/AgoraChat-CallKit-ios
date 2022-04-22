@@ -9,19 +9,23 @@
 #import "EaseCallManager.h"
 
 @interface EaseCallManager (Private)
--(void) switchCameraAction;
--(void) hangupAction;
--(void) acceptAction;
--(void) inviteAction;
--(void) enableVideo:(BOOL)aEnable;
--(void) muteAudio:(BOOL)aMuted;
--(void) speakeOut:(BOOL)aEnable;
--(NSString*) getNicknameByUserName:(NSString*)aUserName;
--(NSURL*) getHeadImageByUserName:(NSString*)aUserName;
--(NSString*) getUserNameByUid:(NSNumber*)uId;
+
+- (void)switchCameraAction;
+- (void)hangupAction;
+- (void)acceptAction;
+- (void)inviteAction;
+- (void)enableVideo:(BOOL)aEnable;
+- (void)muteAudio:(BOOL)aMuted;
+- (void)speakeOut:(BOOL)aEnable;
+- (NSString *)getNicknameByUserName:(NSString *)aUserName;
+- (NSURL *)getHeadImageByUserName:(NSString *)aUserName;
+- (NSString *)getUserNameByUid:(NSNumber *)uId;
 - (void)setupLocalVideo;
+- (void)setupLocalVideo:(UIView *)displayView;
 - (void)setupRemoteVideoView:(NSUInteger)uid;
+- (void)setupRemoteVideoView:(NSUInteger)uid withDisplayView:(UIView *)view;
 - (void)joinChannel;
--(void) switchToVoice;
+- (void)switchToVoice;
 - (void)sendVideoToVoiceMsg;
+
 @end /* EaseCallManager_Private_h */

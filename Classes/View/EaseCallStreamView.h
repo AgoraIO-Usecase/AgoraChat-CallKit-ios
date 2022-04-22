@@ -6,28 +6,18 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+@import UIKit;
 
 @protocol EaseCallStreamViewDelegate;
-@interface EaseCallStreamView : UIView
+@class EaseCallStreamViewModel;
 
+@interface EaseCallStreamView : UICollectionViewCell
+
+@property (nonatomic, strong) EaseCallStreamViewModel *model;
+@property (readonly) UIView *displayView;
 @property (nonatomic, weak) id<EaseCallStreamViewDelegate> delegate;
 
-@property (nonatomic, strong) UIView *displayView;
-
-@property (nonatomic, strong) UILabel *nameLabel;
-
-@property (nonatomic) BOOL enableVoice;
-
-@property (nonatomic) BOOL isTalking;
-
-@property (nonatomic) BOOL enableVideo;
-
-@property (nonatomic, strong) UIImageView *bgView;
-
-@property (nonatomic) BOOL isLockedBgView;
-
-@property (nonatomic, strong) id ext;
+- (void)update;
 
 @end
 

@@ -13,12 +13,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface EaseCallSingleViewController : EaseCallBaseViewController
+
 @property (nonatomic,strong) EaseCallStreamView* remoteView;
 @property (nonatomic,strong) EaseCallStreamView* localView;
 @property (nonatomic) BOOL isCaller;
 @property (nonatomic) BOOL isConnected;
-@property (nonatomic,strong) UIButton* switchToVoice;
-@property (nonatomic,strong) UILabel* switchToVoiceLable;
+@property (nonatomic,strong) UIButton *switchToVoice;
 
 - (instancetype)initWithisCaller:(BOOL)aIsCaller type:(EaseCallType)aType  remoteName:(NSString*)aRemoteName;
 - (void)setRemoteMute:(BOOL)aMuted;
@@ -27,6 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setRemoteDisplayView:(UIView*)aDisplayView enableVideo:(BOOL)aEnableVideo;
 - (void)updateToVoice;
 - (void)showTip:(BOOL)aEnableVoice;
+
 @end
 
 NS_ASSUME_NONNULL_END
