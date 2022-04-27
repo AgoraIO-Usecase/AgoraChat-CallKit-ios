@@ -19,11 +19,8 @@
 @interface EaseCallMultiViewController () <EaseCallStreamViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
 
 @property (nonatomic) UIButton *inviteButton;
-@property (nonatomic) UILabel *statusLable;
 @property (nonatomic) BOOL isJoined;
 @property (nonatomic) EaseCallStreamView *miniView;
-@property (nonatomic,strong) UILabel *remoteNameLable;
-@property (nonatomic,strong) UIImageView *remoteHeadView;
 @property (nonatomic, strong) UICollectionView *collectionView;
 
 @property (nonatomic, strong) NSMutableArray<EaseCallStreamViewModel *> *allUserList;
@@ -50,7 +47,7 @@
     model.enableVideo = self.callType == EaseCallTypeMulti;
     model.callType = self.callType;
     model.isMini = NO;
-    model.joined = YES;
+    model.joined = self.inviterId.length <= 0;
     model.showUsername = AgoraChatClient.sharedClient.currentUsername;
     model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
     [_allUserList addObject:model];
@@ -122,44 +119,15 @@
     
     if (self.inviterId.length > 0) {
         NSURL *remoteUrl = [EaseCallManager.sharedManager getHeadImageByUserName:self.inviterId];
-        self.remoteHeadView = [[UIImageView alloc] init];
-        [self.contentView addSubview:self.remoteHeadView];
-        [self.remoteHeadView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@80);
-            make.centerX.equalTo(self.contentView);
-            make.top.equalTo(@100);
-        }];
-        [self.remoteHeadView sd_setImageWithURL:remoteUrl placeholderImage:[UIImage agoraChatCallKit_imageNamed:@"group_avatar_default"]];
-        self.remoteNameLable = [[UILabel alloc] init];
-        self.remoteNameLable.backgroundColor = [UIColor clearColor];
-        self.remoteNameLable.textColor = [UIColor whiteColor];
-        self.remoteNameLable.textAlignment = NSTextAlignmentRight;
-        self.remoteNameLable.font = [UIFont systemFontOfSize:24];
-        self.remoteNameLable.text = [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
-        [self.contentView addSubview:self.remoteNameLable];
-        [self.remoteNameLable mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.remoteHeadView.mas_bottom).offset(20);
-            make.centerX.equalTo(self.contentView);
-        }];
-        self.statusLable = [[UILabel alloc] init];
-        self.statusLable.backgroundColor = UIColor.clearColor;
-        self.statusLable.font = [UIFont systemFontOfSize:15];
-        self.statusLable.textColor = [UIColor colorWithWhite:1.0 alpha:0.5];
-        self.statusLable.textAlignment = NSTextAlignmentRight;
-        self.statusLable.text = EaseCallLocalizableString(@"receiveCallInviteprompt",nil);
-        self.answerButton.hidden = NO;
-        [self.contentView addSubview:self.statusLable];
-        [self.statusLable mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.remoteNameLable.mas_bottom).offset(20);
-            make.centerX.equalTo(self.contentView);
-        }];
+        EaseCallStreamViewModel *localModel = _allUserList.firstObject;
+        localModel.showUserHeaderURL = remoteUrl;
+        localModel.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
+        if (self.callType == EaseCallTypeMulti) {
+            localModel.showStatusText = EaseCallLocalizableString(@"MultiVidioCall",nil);
+        } else {
+            localModel.showStatusText = EaseCallLocalizableString(@"MultiAudioCall",nil);
+        }
     } else {
-        self.answerButton.hidden = YES;
-        [self.hangupButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.centerX.equalTo(self.buttonView);
-            make.width.height.equalTo(@100);
-            make.bottom.equalTo(self.buttonView);
-        }];
         self.isJoined = YES;
         self.inviteButton.hidden = NO;
     }
@@ -261,9 +229,6 @@
 
 - (void)_refreshViewPos
 {
-    _remoteNameLable.hidden = self.isJoined;
-    _remoteHeadView.hidden = self.isJoined;
-    _collectionView.hidden = !self.isJoined;
     self.microphoneButton.hidden = !self.isJoined;
     
     if (!self.isJoined) {
@@ -342,6 +307,7 @@
 {
     [super answerAction];
     self.isJoined = YES;
+    _allUserList.firstObject.joined = YES;
     [self _refreshViewPos];
 }
 
@@ -363,7 +329,8 @@
 - (void)enableVideoAction
 {
     [super enableVideoAction];
-    _allUserList[0].enableVideo = self.enableCameraButton.isSelected;
+    _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
+    self.switchCameraButton.hidden = self.enableCameraButton.isSelected;
     if (_allUserList.count == 2) {
         [_collectionView reloadData];
     } else {
@@ -458,7 +425,11 @@
         int s = timeLength - m * 60;
         _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
     } else {
-        _miniView.model.showUsername = EaseCallLocalizableString(@"waitforanswer",nil);
+        if (self.callType == EaseCallTypeMulti) {
+            _miniView.model.showUsername = EaseCallLocalizableString(@"VideoCall",nil);
+        } else {
+            _miniView.model.showUsername = EaseCallLocalizableString(@"AudioCall",nil);
+        }
     }
     [_miniView update];
     

@@ -49,6 +49,13 @@
             make.edges.equalTo(@0);
         }];
         
+        _displayView = [[UIView alloc] init];
+        _displayView.backgroundColor = UIColor.clearColor;
+        [self.contentView addSubview:_displayView];
+        [_displayView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(self);
+        }];
+        
         _speakingView = [[UIView alloc] init];
         _speakingView.hidden = YES;
         _speakingView.layer.cornerRadius = 44;
@@ -62,13 +69,6 @@
         [_speakingView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.center.equalTo(_avatarImageView);
             make.width.height.equalTo(@88);
-        }];
-        
-        _displayView = [[UIView alloc] init];
-        _displayView.backgroundColor = UIColor.clearColor;
-        [self.contentView addSubview:_displayView];
-        [_displayView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.edges.equalTo(self);
         }];
         
         _voiceStatusView = [[UIImageView alloc] init];
@@ -138,11 +138,9 @@
         if (_model.showUserHeaderImage) {
             _avatarImageView.image = _model.showUserHeaderImage;
             _bgImageView.image = _model.showUserHeaderImage;
-        } else if (_model.showUserHeaderURL) {
+        } else {
             [_avatarImageView sd_setImageWithURL:_model.showUserHeaderURL placeholderImage:[UIImage agoraChatCallKit_imageNamed:defaultImageName]];
             [_bgImageView sd_setImageWithURL:_model.showUserHeaderURL placeholderImage:[UIImage agoraChatCallKit_imageNamed:defaultImageName]];
-        } else {
-            _avatarImageView.image = [UIImage agoraChatCallKit_imageNamed:defaultImageName];
         }
     }
     
@@ -170,7 +168,6 @@
 {
     _nameLabel.text = _model.showUsername;
     _nameLabel.font = [UIFont systemFontOfSize:14];
-    _statelabel.hidden = YES;
     
     if (_model.isMini) {
         _nameLabel.hidden = NO;
@@ -196,9 +193,9 @@
         } else {
             _avatarImageView.hidden = NO;
             _nameLabel.hidden = NO;
-            _nameLabel.font = [UIFont systemFontOfSize:24];
             _statelabel.hidden = NO;
-            _statelabel.text = _model.showStatusText;
+            _nameLabel.font = [UIFont systemFontOfSize:24];
+            _avatarImageView.layer.cornerRadius = 50;
             [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.width.height.equalTo(@100);
                 make.centerY.equalTo(self).offset(-219);
@@ -210,33 +207,63 @@
             }];
         }
     } else if (_model.callType == EaseCallTypeMulti) {
+        _statelabel.hidden = _model.joined;
         _avatarImageView.layer.cornerRadius = 50;
-        [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@100);
-            make.centerY.equalTo(self).offset(-42);
-            make.centerX.equalTo(self.contentView);
-        }];
-        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(@-8);
-            make.left.equalTo(@11);
-        }];
+        if (_model.joined) {
+            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.height.equalTo(@100);
+                make.centerY.equalTo(self).offset(-42);
+                make.centerX.equalTo(self.contentView);
+            }];
+            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.bottom.equalTo(@-8);
+                make.left.equalTo(@11);
+            }];
+        } else {
+            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.height.equalTo(@100);
+                make.centerY.equalTo(self).offset(-219);
+                make.centerX.equalTo(self.contentView);
+            }];
+            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.top.equalTo(_avatarImageView.mas_bottom).offset(7);
+                make.centerX.equalTo(self.contentView);
+            }];
+        }
     } else {
+        _statelabel.hidden = _model.joined;
         _avatarImageView.layer.cornerRadius = 40;
-        [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@80);
-            make.centerY.equalTo(self).offset(-42);
-            make.centerX.equalTo(self.contentView);
-        }];
-        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
-            make.centerX.equalTo(_avatarImageView);
-        }];
+        if (_model.joined) {
+            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.height.equalTo(@80);
+                make.centerY.equalTo(self).offset(-42);
+                make.centerX.equalTo(self.contentView);
+            }];
+            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
+                make.centerX.equalTo(_avatarImageView);
+            }];
+        } else {
+            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.height.equalTo(@100);
+                make.centerY.equalTo(self).offset(-219);
+                make.centerX.equalTo(self.contentView);
+            }];
+            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.top.equalTo(_avatarImageView.mas_bottom).offset(7);
+                make.centerX.equalTo(self.contentView);
+            }];
+        }
+    }
+    
+    if (!_statelabel.hidden) {
+        _statelabel.text = _model.showStatusText;
     }
 }
 
 - (void)updateStatusViews
 {
-    if (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallTypeMultiAudio) {
+    if (_model.callType == EaseCallType1v1Audio) {
         _voiceStatusView.hidden = YES;
         _videoStatusView.hidden = YES;
     } else if (_model.callType == EaseCallType1v1Video) {
@@ -245,6 +272,9 @@
     } else if (_model.callType == EaseCallTypeMulti) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
         _videoStatusView.hidden = _model.enableVideo || !_model.joined || _model.isMini;
+    } else if (_model.callType == EaseCallTypeMultiAudio) {
+        _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
+        _videoStatusView.hidden = YES;
     }
     
     if (_model.callType == EaseCallTypeMulti || _model.callType == EaseCallType1v1Video) {

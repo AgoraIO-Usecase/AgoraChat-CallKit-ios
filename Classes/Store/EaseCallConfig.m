@@ -34,8 +34,6 @@
 @end
 
 @interface EaseCallConfig ()
-// 语音通话可以转视频通话
-@property (nonatomic) BOOL canSwitchVoiceToVideo;
 
 @end
 

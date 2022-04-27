@@ -27,4 +27,8 @@
     _enableVideo = enableVideo;
 }
 
+- (void)setJoined:(BOOL)joined {
+    _joined = joined;
+}
+
 @end

@@ -513,12 +513,6 @@ static EaseCallManager *easeCallManager = nil;
     if (aExt && aExt.count > 0) {
         [ext setValue:aExt forKey:kExt];
     }
-    //    if(aType == EaseCallType1v1Audio) {
-    //        [ext setObject:EMCOMMUNICATE_TYPE_VOICE forKey:EMCOMMUNICATE_TYPE];
-    //    }
-    //    if(aType == EaseCallType1v1Video) {
-    //        [ext setObject:EMCOMMUNICATE_TYPE_VIDEO forKey:EMCOMMUNICATE_TYPE];
-    //    }
     AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:self.modal.curUserAccount to:aUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {

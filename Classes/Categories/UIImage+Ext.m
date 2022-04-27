@@ -6,19 +6,13 @@
 //
 
 #import "UIImage+Ext.h"
-#import "EaseCallStreamView.h"
-
-static NSBundle *imageBundle;
+#import "NSBundle+AgoraChatCallKit.h"
 
 @implementation UIImage (Ext)
 
 + (UIImage *)agoraChatCallKit_imageNamed:(NSString *)imageName
 {
-    if (!imageBundle) {
-        NSString *path = [NSBundle.mainBundle pathForResource:@"AgoraChatCallKit" ofType:@"bundle"];
-        imageBundle = [NSBundle bundleWithPath:path];
-    }
-    return [UIImage imageNamed:imageName inBundle:imageBundle withConfiguration:nil];
+    return [UIImage imageNamed:imageName inBundle:NSBundle.agoraChatCallKitBundle withConfiguration:nil];
 }
 
 @end

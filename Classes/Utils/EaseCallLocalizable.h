@@ -8,9 +8,9 @@
 #ifndef EaseCallLocalizable_h
 #define EaseCallLocalizable_h
 
-#define EaseCallLocalizableString(key,comment) ^{\
-NSBundle* bundle = [NSBundle bundleForClass:[EaseCallManager class]];\
-return NSLocalizedStringFromTableInBundle(key, nil, bundle, comment);\
-}()
+#import "NSBundle+AgoraChatCallKit.h"
+
+#define EaseCallLocalizableString(key, comment)\
+NSLocalizedStringFromTableInBundle(key, nil, NSBundle.agoraChatCallKitBundle, comment)
 
 #endif /* EaseCallLocalizable_h */

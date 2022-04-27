@@ -45,39 +45,38 @@
     remoteModel.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:self.remoteUid];
     
     if (self.isCaller) {
-        remoteModel.showStatusText = EaseCallLocalizableString(@"waitforanswer",nil);
+        remoteModel.showStatusText = EaseCallLocalizableString(@"calling",nil);
         self.answerButton.hidden = YES;
     } else {
-        remoteModel.showStatusText = EaseCallLocalizableString(@"receiveCallInviteprompt",nil);
+        if (self.callType == EaseCallType1v1Audio) {
+            remoteModel.showStatusText = EaseCallLocalizableString(@"AudioCall",nil);
+        } else {
+            remoteModel.showStatusText = EaseCallLocalizableString(@"VideoCall",nil);
+        }
     }
     _remoteView.model = remoteModel;
     
     if (self.callType == EaseCallType1v1Video) {
+        EaseCallStreamViewModel *localModel = [[EaseCallStreamViewModel alloc] init];
+        localModel.enableVideo = YES;
+        localModel.callType = self.callType;
+        localModel.isMini = YES;
+
         _localView = [[EaseCallStreamView alloc] init];
         _localView.delegate = self;
         _localView.hidden = YES;
+        _localView.model = localModel;
         [self.contentView addSubview:_localView];
         NSURL *selfUrl = [EaseCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
         _localView.model.showUserHeaderURL = selfUrl;
-        
+
         [_localView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.width.equalTo(@80);
             make.height.equalTo(@100);
             make.right.equalTo(self.contentView).with.offset(-40);
             make.top.equalTo(self.contentView).with.offset(70);
         }];
-        EaseCallStreamViewModel *localModel = [[EaseCallStreamViewModel alloc] init];
-        localModel.enableVideo = YES;
-        localModel.callType = self.callType;
-        localModel.isMini = YES;
         [EaseCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
-        
-        if (_isCaller) {
-            localModel.showStatusText = EaseCallLocalizableString(@"waitforanswer",nil);
-        } else {
-            localModel.showStatusText = EaseCallLocalizableString(@"receiveCallInviteprompt",nil);
-        }
-        _localView.model = localModel;
     }
     
     [self updatePos];
@@ -172,16 +171,14 @@
         }
     } else {
         //视频
-        self.enableCameraButton.hidden = YES;
-        self.microphoneButton.hidden = NO;
+        self.enableCameraButton.hidden = NO;
         self.speakerButton.hidden = YES;
         self.switchCameraButton.hidden = NO;
         self.localView.hidden = !_isConnected;
         
         if (_isConnected) {
-            // 接通
+            self.microphoneButton.hidden = NO;
             self.answerButton.hidden = YES;
-            self.enableCameraButton.hidden = NO;
             
             [self.enableCameraButton mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.left.equalTo(@40);
@@ -199,11 +196,9 @@
                 make.bottom.equalTo(self.buttonView);
             }];
         } else {
-            // 未接通
             if (_isCaller) {
-                // 发起方
+                self.microphoneButton.hidden = NO;
                 self.answerButton.hidden = YES;
-                self.enableCameraButton.hidden = NO;
                 [self.enableCameraButton mas_remakeConstraints:^(MASConstraintMaker *make) {
                     make.left.equalTo(@40);
                     make.bottom.equalTo(self.buttonView);
@@ -221,9 +216,8 @@
                 }];
                 
             } else {
-                // 接听方
+                self.microphoneButton.hidden = YES;
                 self.answerButton.hidden = NO;
-                self.enableCameraButton.hidden = NO;
                 [self.hangupButton mas_remakeConstraints:^(MASConstraintMaker *make) {
                     make.centerX.equalTo(self.buttonView);
                     make.width.height.equalTo(@60);
@@ -259,7 +253,7 @@
 - (void)muteAction
 {
     [super muteAction];
-    self.localView.model.enableVoice = self.microphoneButton.isSelected;
+    self.localView.model.enableVoice = !self.microphoneButton.isSelected;
     [self.localView update];
 }
 
@@ -374,7 +368,7 @@
 - (void)enableVideoAction
 {
     [super enableVideoAction];
-    self.localView.model.enableVideo = self.enableCameraButton.isSelected;
+    self.localView.model.enableVideo = !self.enableCameraButton.isSelected;
     [self.localView update];
 }
 
@@ -395,7 +389,6 @@
         [self startTimer];
         if (self.isMini && self.type == EaseCallType1v1Video) {
             _remoteView.model.enableVideo = YES;
-            _remoteView.model.showUsername = EaseCallLocalizableString(@"Call in progress",nil);
         }
         [self setupLocalVideo];
     }
