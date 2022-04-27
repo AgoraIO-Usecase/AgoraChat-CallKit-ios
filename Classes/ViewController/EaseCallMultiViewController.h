@@ -25,9 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<NSNumber *> *)getAllUserIds;
 
 @property (nonatomic,strong) NSString *inviterId;
-@property (nonatomic) EaseCallStreamView *localView;
-
-- (EaseCallStreamView *)streamViewWithUid:(NSInteger)uid;
 
 @end
 

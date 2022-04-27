@@ -14,14 +14,14 @@
 #import "UIImage+Ext.h"
 #import "EaseCallLocalizable.h"
 #import "EaseCallStreamViewModel.h"
+#import "EaseCallMultiViewLayout.h"
 
 @interface EaseCallMultiViewController () <EaseCallStreamViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
 
 @property (nonatomic) UIButton *inviteButton;
 @property (nonatomic) UILabel *statusLable;
 @property (nonatomic) BOOL isJoined;
-@property (nonatomic) EaseCallStreamView *bigView;
-@property (atomic) BOOL isNeedLayout;
+@property (nonatomic) EaseCallStreamView *miniView;
 @property (nonatomic,strong) UILabel *remoteNameLable;
 @property (nonatomic,strong) UIImageView *remoteHeadView;
 @property (nonatomic, strong) UICollectionView *collectionView;
@@ -80,12 +80,9 @@
 
 - (void)setupSubViews
 {
-    self.contentView.backgroundColor = [UIColor colorWithRed:0.949 green:0.949 blue:0.949 alpha:1];
-    self.bigView = nil;
-    self.isNeedLayout = NO;
-    [self.timeLabel setHidden:YES];
+    self.contentView.backgroundColor = [UIColor colorWithRed:40.0 / 255 green:40.0 / 255 blue:45.0 / 255 alpha:1];
     self.inviteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.inviteButton setImage:[UIImage imageNamedFromBundle:@"invite"] forState:UIControlStateNormal];
+    [self.inviteButton setImage:[UIImage agoraChatCallKit_imageNamed:@"invite"] forState:UIControlStateNormal];
     [self.inviteButton addTarget:self action:@selector(inviteAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.inviteButton];
     [self.inviteButton mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -102,10 +99,15 @@
         make.right.equalTo(self.inviteButton.mas_left).offset(-16);
     }];
     
-    UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
-    layout.minimumLineSpacing = 0;
-    layout.minimumInteritemSpacing = 0;
-    layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+    __weak typeof(self)weakSelf = self;
+    EaseCallMultiViewLayout *layout = [[EaseCallMultiViewLayout alloc] init];
+    layout.isVideo = self.callType == EaseCallTypeMulti;
+    layout.getVideoEnableBlock = ^BOOL(NSIndexPath * _Nonnull indexPath) {
+        if (weakSelf.allUserList.count <= indexPath.item) {
+            return YES;
+        }
+        return weakSelf.allUserList[indexPath.item].enableVideo;
+    };
     _collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
     _collectionView.dataSource = self;
     _collectionView.delegate = self;
@@ -127,14 +129,13 @@
             make.centerX.equalTo(self.contentView);
             make.top.equalTo(@100);
         }];
-        [self.remoteHeadView sd_setImageWithURL:remoteUrl];
+        [self.remoteHeadView sd_setImageWithURL:remoteUrl placeholderImage:[UIImage agoraChatCallKit_imageNamed:@"group_avatar_default"]];
         self.remoteNameLable = [[UILabel alloc] init];
         self.remoteNameLable.backgroundColor = [UIColor clearColor];
         self.remoteNameLable.textColor = [UIColor whiteColor];
         self.remoteNameLable.textAlignment = NSTextAlignmentRight;
         self.remoteNameLable.font = [UIFont systemFontOfSize:24];
         self.remoteNameLable.text = [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
-        self.timeLabel.hidden = YES;
         [self.contentView addSubview:self.remoteNameLable];
         [self.remoteNameLable mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.remoteHeadView.mas_bottom).offset(20);
@@ -162,14 +163,8 @@
         self.isJoined = YES;
         self.inviteButton.hidden = NO;
     }
-}
-
-- (void)viewDidLayoutSubviews
-{
-    [super viewDidLayoutSubviews];
-    int count = self.callType == EaseCallTypeMulti ? 2 : 3;
-    UICollectionViewFlowLayout *layout = _collectionView.collectionViewLayout;
-    layout.itemSize = CGSizeMake(floor(_collectionView.bounds.size.width / count), floor(_collectionView.bounds.size.height / count));
+    
+    [self.contentView bringSubviewToFront:self.miniButton];
 }
 
 - (void)addMember:(NSNumber *)uId enableVideo:(BOOL)aEnableVideo
@@ -207,11 +202,7 @@
     if (model) {
         model.showUsername = nickname;
         model.showUserHeaderURL = url;
-        for (EaseCallStreamView *cell in _collectionView.visibleCells) {
-            if (cell.model == model) {
-                [cell update];
-            }
-        }
+        [[self streamViewWithUid:uid.integerValue] update];
     }
 }
 
@@ -230,11 +221,7 @@
     EaseCallStreamViewModel *model = _joinedUserDictionary[uId];
     if (model) {
         model.enableVoice = !muted;
-        for (EaseCallStreamView *cell in _collectionView.visibleCells) {
-            if (cell.model == model) {
-                [cell update];
-            }
-        }
+        [[self streamViewWithUid:uId.integerValue] update];
     }
 }
 
@@ -250,10 +237,6 @@
             }
         }
     }
-    // TODO:
-//    if (view == self.bigView && !aEnabled) {
-//        self.bigView = nil;
-//    }
 }
 
 - (EaseCallStreamView *)localView
@@ -281,7 +264,6 @@
     _remoteNameLable.hidden = self.isJoined;
     _remoteHeadView.hidden = self.isJoined;
     _collectionView.hidden = !self.isJoined;
-    self.timeLabel.hidden = !self.isJoined;
     self.microphoneButton.hidden = !self.isJoined;
     
     if (!self.isJoined) {
@@ -328,6 +310,7 @@
             make.width.height.equalTo(@100);
         }];
     } else {
+        self.switchCameraButton.hidden = YES;
         self.enableCameraButton.hidden = YES;
         self.speakerButton.hidden = NO;
         [self.speakerButton mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -348,12 +331,6 @@
         make.right.equalTo(@-40);
         make.width.height.equalTo(@100);
     }];
-    
-    [self.timeLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.contentView);
-        make.centerY.equalTo(self.inviteButton);
-        make.width.equalTo(@100);
-    }];
 }
 
 - (void)inviteAction
@@ -372,9 +349,14 @@
 {
     [super muteAction];
     _allUserList[0].enableVoice = !self.microphoneButton.isSelected;
-    EaseCallStreamView *cell = _collectionView.visibleCells.firstObject;
-    if (cell.model.uid == 0) {
-        [cell update];
+    EaseCallStreamView *localView = self.localView;
+    if (localView) {
+        [localView update];
+        if (_allUserList[0].enableVoice) {
+            [EaseCallManager.sharedManager muteAudio:NO];
+        } else {
+            [EaseCallManager.sharedManager muteAudio:YES];
+        }
     }
 }
 
@@ -382,13 +364,17 @@
 {
     [super enableVideoAction];
     _allUserList[0].enableVideo = self.enableCameraButton.isSelected;
-    EaseCallStreamView *cell = _collectionView.visibleCells.firstObject;
-    if (cell.model.uid == 0) {
-        [cell update];
-        if (_allUserList[0].enableVideo) {
-            [EaseCallManager.sharedManager setupLocalVideo:cell.displayView];
-        } else {
-            [EaseCallManager.sharedManager setupLocalVideo:nil];
+    if (_allUserList.count == 2) {
+        [_collectionView reloadData];
+    } else {
+        EaseCallStreamView *cell = self.localView;
+        if (cell) {
+            [cell update];
+            if (_allUserList[0].enableVideo) {
+                [EaseCallManager.sharedManager setupLocalVideo:cell.displayView];
+            } else {
+                [EaseCallManager.sharedManager setupLocalVideo:nil];
+            }
         }
     }
 }
@@ -401,6 +387,7 @@
         model.uid = -1;
         model.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:userName];
         model.showUserHeaderURL = url;
+        model.callType = self.callType;
         model.joined = NO;
         
         [_allUserList addObject:model];
@@ -428,15 +415,12 @@
         if (!model) {
             return;
         }
-        model.isTalking = isTalking;
         if (isTalking) {
             _isTalkingDictionary[@(userId)] = @(CFAbsoluteTimeGetCurrent());
         }
-        for (EaseCallStreamView *cell in _collectionView.visibleCells) {
-            if (cell.model.uid == userId) {
-                [cell update];
-                return;
-            }
+        if (model.isTalking != isTalking) {
+            model.isTalking = isTalking;
+            [[self streamViewWithUid:userId] update];
         }
     });
 }
@@ -449,47 +433,67 @@
     return userIds;
 }
 
-- (void)streamViewDidTap:(EaseCallStreamView *)aVideoView
-{
-    // TODO:
-    if (self.isMini) {
-        self.isMini = NO;
-//        self.remoteView.model.isMini = YES;
-//        [self.remoteView removeFromSuperview];
-//        UIWindow *window = UIApplication.sharedApplication.keyWindow;
-//        UIViewController *rootViewController = window.rootViewController;
-//        self.modalPresentationStyle = 0;
-//        [rootViewController presentViewController:self animated:YES completion:nil];
-//        if (self.type == EaseCallType1v1Video) {
-//            self.remoteView.model.enableVideo = YES;
-//        }
-//        [self setRemoteView:self.remoteView];
-//        [self.remoteView update];
-//        return;
-    }
-    if (aVideoView == self.bigView) {
-        self.bigView = nil;
-        [self _refreshViewPos];
-    } else {
-        if (aVideoView.model.enableVideo) {
-            self.bigView = aVideoView;
-            [self _refreshViewPos];
-        }
-    }
-}
-
 - (void)miniAction
 {
+    if (((EaseCallMultiViewLayout *)_collectionView.collectionViewLayout).bigIndex != -1) {
+        ((EaseCallMultiViewLayout *)_collectionView.collectionViewLayout).bigIndex = -1;
+        [_collectionView reloadData];
+        [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"mini"] forState:UIControlStateNormal];
+        return;
+    }
     self.isMini = YES;
-    [super miniAction];
-    // TODO:
-//    self.floatingView.model.enableVideo = NO;
-//    self.floatingView.delegate = self;
-//    if (self.isJoined) {
-//        self.floatingView.showUsername = EaseCallLocalizableString(@"Call in progress",nil);
-//    } else {
-//        self.floatingView.showUsername = EaseCallLocalizableString(@"waitforanswer",nil);
-//    }
+
+    if (!_miniView) {
+        _miniView = [[EaseCallStreamView alloc] init];
+        _miniView.model = [[EaseCallStreamViewModel alloc] init];
+        _miniView.model.isMini = YES;
+        _miniView.model.enableVideo = NO;
+        _miniView.model.callType = self.callType;
+        _miniView.delegate = self;
+        _miniView.panGestureActionEnable = YES;
+    }
+    if (self.isJoined) {
+        int timeLength = self.timeLength;
+        int m = timeLength / 60;
+        int s = timeLength - m * 60;
+        _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
+    } else {
+        _miniView.model.showUsername = EaseCallLocalizableString(@"waitforanswer",nil);
+    }
+    [_miniView update];
+    
+    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    if (!_miniView.superview) {
+        [keyWindow addSubview:_miniView];
+    }
+    [self updatePositionToMiniView];
+    _miniView.hidden = NO;
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)updateMiniViewPosition
+{
+    EaseCallMiniViewPosition position;
+    position.isLeft = _miniView.center.x <= self.contentView.bounds.size.width / 2;
+    position.top = _miniView.frame.origin.y;
+    self.miniViewPosition = position;
+}
+
+- (void)updatePositionToMiniView
+{
+    CGFloat x = 20;
+    if (!self.miniViewPosition.isLeft) {
+        x = self.contentView.bounds.size.width - 96;
+    }
+    _miniView.frame = CGRectMake(x, self.miniViewPosition.top, 76, 76);
+}
+
+- (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec
+{
+    if (self.isJoined && self.isMini) {
+        _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", min, sec];
+        [_miniView update];
+    }
 }
 
 - (void)usersInfoUpdated
@@ -505,24 +509,88 @@
     });
 }
 
+- (void)setupLocalVideo
+{
+    [EaseCallManager.sharedManager setupLocalVideo:self.localView.displayView];
+}
+
+- (void)setupRemoteVideoView:(NSUInteger)uid
+{
+    [EaseCallManager.sharedManager setupRemoteVideoView:uid withDisplayView:[self streamViewWithUid:uid].displayView];
+}
+
+- (void)dealloc
+{
+    [_miniView removeFromSuperview];
+}
+
+#pragma mark - EaseCallStreamViewDelegate
+- (void)streamViewDidTap:(EaseCallStreamView *)aVideoView
+{
+    if (self.isMini) {
+        self.isMini = NO;
+        _miniView.hidden = YES;
+        UIViewController *rootViewController = UIApplication.sharedApplication.keyWindow.rootViewController;
+        [rootViewController presentViewController:self animated:YES completion:nil];
+        return;
+    }
+    
+    if (self.callType != EaseCallTypeMulti) {
+        return;
+    }
+    
+    NSInteger bigIndex = -1;
+    for (int i = 0; i < _allUserList.count; i ++) {
+        if (_allUserList[i] == aVideoView.model) {
+            bigIndex = i;
+            break;
+        }
+    }
+    if (bigIndex != -1) {
+        ((EaseCallMultiViewLayout *)self.collectionView.collectionViewLayout).bigIndex = bigIndex;
+        [_collectionView reloadData];
+        [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"big_mini"] forState:UIControlStateNormal];
+    }
+}
+
+- (void)streamView:(EaseCallStreamView *)videoView didPan:(UIPanGestureRecognizer *)panGesture
+{
+    CGPoint translation = [panGesture translationInView:panGesture.view];
+    CGFloat x = 20;
+    if (!self.miniViewPosition.isLeft) {
+        x = self.contentView.bounds.size.width - videoView.bounds.size.width - 20;
+    }
+    CGFloat y = self.miniViewPosition.top;
+    videoView.frame = CGRectMake(x + translation.x, y + translation.y, videoView.bounds.size.width, videoView.bounds.size.height);
+    if (panGesture.state == UIGestureRecognizerStateEnded || panGesture.state == UIGestureRecognizerStateCancelled) {
+        [self updateMiniViewPosition];
+        [UIView animateWithDuration:0.25 animations:^{
+            [self updatePositionToMiniView];
+        }];
+    }
+}
+
+#pragma mark - UICollectionViewDataSource UICollectionViewDelegate
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     return _allUserList.count;
 }
 
-- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
+{
     EaseCallStreamViewModel *model = _allUserList[indexPath.item];
     EaseCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
-    cell.model = model;
+    model.isMini = NO;
     if (self.callType == EaseCallTypeMulti) {
         if (model.uid == 0) {
             [EaseCallManager.sharedManager setupLocalVideo:cell.displayView];
+            model.isMini = _allUserList.count == 2 && ((EaseCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
         } else {
             [EaseCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
             [EaseCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:cell.displayView];
         }
     }
     cell.delegate = self;
-    [cell update];
+    cell.model = model;
     return cell;
 }
 
@@ -546,10 +614,6 @@
     if (model.uid != 0) {
         [EaseCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];
     }
-}
-
-- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    
 }
 
 @end

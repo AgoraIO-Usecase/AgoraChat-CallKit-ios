@@ -8,22 +8,17 @@
 #import "UIImage+Ext.h"
 #import "EaseCallStreamView.h"
 
-@implementation UIImage (Ext)
-+ (UIImage*) imageNamedFromBundle:(NSString*)imageName
-{
-    NSBundle* bundle = [NSBundle bundleForClass:[EaseCallStreamView class]];
-    NSString* path = [NSString stringWithFormat:@"EaseCall.bundle/%@",imageName];
-    NSString *file1 = [bundle pathForResource:path ofType:@"png"];
-    UIImage *image1 = [UIImage imageWithContentsOfFile:file1];
+static NSBundle *imageBundle;
 
-    return image1;
+@implementation UIImage (Ext)
+
++ (UIImage *)agoraChatCallKit_imageNamed:(NSString *)imageName
+{
+    if (!imageBundle) {
+        NSString *path = [NSBundle.mainBundle pathForResource:@"AgoraChatCallKit" ofType:@"bundle"];
+        imageBundle = [NSBundle bundleWithPath:path];
+    }
+    return [UIImage imageNamed:imageName inBundle:imageBundle withConfiguration:nil];
 }
-/*
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
-- (void)drawRect:(CGRect)rect {
-    // Drawing code
-}
-*/
 
 @end

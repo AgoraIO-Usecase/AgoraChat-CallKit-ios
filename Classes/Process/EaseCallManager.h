@@ -107,6 +107,7 @@
  */
 - (void)setUsers:(NSDictionary<NSNumber*,NSString*>*_Nonnull)aUsers channelName:(NSString*_Nonnull)aChannel;
 
+- (int)muteLocalVideoStream:(BOOL)mute;
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
 
 - (void)pushRegistry:(nonnull PKPushRegistry *)registry didUpdatePushCredentials:(nonnull PKPushCredentials *)pushCredentials forType:(nonnull PKPushType)type;

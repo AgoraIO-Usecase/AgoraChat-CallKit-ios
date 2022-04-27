@@ -129,9 +129,14 @@ static EaseCallManager *easeCallManager = nil;
     }
 }
 
+- (int)muteLocalVideoStream:(BOOL)mute;
+{
+    return [self.agoraKit muteLocalVideoStream:mute];
+}
+
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute
 {
-    [self.agoraKit muteRemoteVideoStream:uid mute:mute];
+    return [self.agoraKit muteRemoteVideoStream:uid mute:mute];
 }
 
 - (NSMutableDictionary*)callTimerDic
@@ -339,7 +344,7 @@ static EaseCallManager *easeCallManager = nil;
         UIViewController* rootVC = keyWindow.rootViewController;
         [rootVC presentViewController:self.callVC animated:NO completion:^{
             if (weakself.modal.currentCall.callType == EaseCallType1v1Video) {
-                [weakself setupLocalVideo];
+                [weakself.callVC setupLocalVideo];
             }
             [weakself fetchToken];
         }];
@@ -363,7 +368,7 @@ static EaseCallManager *easeCallManager = nil;
         UIViewController* rootVC = keyWindow.rootViewController;
         __weak typeof(self) weakself = self;
         [rootVC presentViewController:self.callVC animated:NO completion:^{
-            [weakself setupLocalVideo];
+            [weakself.callVC setupLocalVideo];
             [weakself fetchToken];
         }];
     }
@@ -829,7 +834,7 @@ static EaseCallManager *easeCallManager = nil;
                     weakself.modal.state = EaseCallState_Answering;
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (weakself.modal.currentCall.callType != EaseCallType1v1Audio && weakself.modal.currentCall.callType != EaseCallTypeMultiAudio) {
-                            [weakself setupLocalVideo];
+                            [weakself.callVC setupLocalVideo];
                         }
                         [weakself fetchToken];
                     });
@@ -1144,6 +1149,8 @@ static EaseCallManager *easeCallManager = nil;
 {
     if (self.modal.currentCall.callType == EaseCallTypeMulti) {
         [[self getMultiVC] setRemoteEnableVideo:!muted uId:@(uid)];
+    } else if (self.modal.currentCall.callType == EaseCallType1v1Video) {
+        [[self getSingleVC] setRemoteEnableVideo:!muted];
     }
 }
 
@@ -1160,7 +1167,7 @@ static EaseCallManager *easeCallManager = nil;
 // 对方发视频流
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteVideoDecodedOfUid:(NSUInteger)uid size:(CGSize)size elapsed:(NSInteger)elapsed
 {
-    [self setupRemoteVideoView:uid];
+    [self.callVC setupRemoteVideoView:uid];
     //[[EMClient sharedClient] log:[NSString stringWithFormat:@"firstRemoteVideoDecodedOfUid:%lu",uid]];
 }
 
@@ -1172,12 +1179,12 @@ static EaseCallManager *easeCallManager = nil;
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine remoteVideoStateChangedOfUid:(NSUInteger)uid state:(AgoraVideoRemoteState)state reason:(AgoraVideoRemoteStateReason)reason elapsed:(NSInteger)elapsed
 {
     NSLog(@"staate:%d,reason:%d",state,reason);
-    if (reason == AgoraVideoRemoteStateReasonRemoteMuted && self.modal.currentCall.callType == EaseCallType1v1Video) {
-        __weak typeof(self) weakself = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [weakself switchToVoice];
-        });
-    }
+//    if (reason == AgoraVideoRemoteStateReasonRemoteMuted && self.modal.currentCall.callType == EaseCallType1v1Video) {
+//        __weak typeof(self) weakself = self;
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            [weakself switchToVoice];
+//        });
+//    }
 }
 
 // 谁在说话的回调
@@ -1321,11 +1328,6 @@ static EaseCallManager *easeCallManager = nil;
     }
 }
 
-- (void)enableVideo:(BOOL)aEnable
-{
-    [self.agoraKit muteLocalVideoStream:!aEnable];
-}
-
 - (void)muteAudio:(BOOL)aMuted
 {
     [self.agoraKit muteLocalAudioStream:aMuted];
@@ -1354,7 +1356,7 @@ static EaseCallManager *easeCallManager = nil;
             return user.headImage;
         }
     }
-    return self.config.defaultHeadImage;
+    return nil;
 }
 
 - (NSString*)getUserNameByUid:(NSNumber *)uId
@@ -1368,15 +1370,6 @@ static EaseCallManager *easeCallManager = nil;
     return nil;
 }
 
-- (void)setupRemoteVideoView:(NSUInteger)uid
-{
-    if (self.modal.currentCall.callType == EaseCallType1v1Video) {
-        [self setupRemoteVideoView:uid withDisplayView:[self getSingleVC].remoteView.displayView];
-    } else if (self.modal.currentCall.callType == EaseCallTypeMulti) {
-        [self setupRemoteVideoView:uid withDisplayView:[[self getMultiVC] streamViewWithUid:uid]];
-    }
-}
-
 - (void)setupRemoteVideoView:(NSUInteger)uid withDisplayView:(UIView *)view
 {
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
@@ -1384,17 +1377,6 @@ static EaseCallManager *easeCallManager = nil;
     canvas.renderMode = AgoraVideoRenderModeHidden;
     canvas.view = view;
     [self.agoraKit setupRemoteVideo:canvas];
-}
-
-- (void)setupLocalVideo
-{
-    UIView *view = nil;
-    if (self.modal.currentCall.callType == EaseCallTypeMulti) {
-        view = [self getMultiVC].localView.displayView;
-    } else {
-        view = [self getSingleVC].localView.displayView;
-    }
-    [self setupLocalVideo:view];
 }
 
 - (void)setupLocalVideo:(UIView *)displayView
@@ -1432,29 +1414,12 @@ static EaseCallManager *easeCallManager = nil;
             weakself.modal.hasJoinedChannel = YES;
             [weakself.modal.currentCall.allUserAccounts setObject:AgoraChatClient.sharedClient.currentUsername forKey:@(uid)];
             if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
-                [self enableVideo:NO];
+                [self muteLocalVideoStream:YES];
             }
         }];
         
         [weakself speakeOut:YES];
     });
-}
-
-- (void)switchToVoice
-{
-    if (self.modal.currentCall && self.modal.currentCall.callType == EaseCallType1v1Video) {
-        self.bNeedSwitchToVoice = YES;
-        self.modal.currentCall.callType = EaseCallType1v1Audio;
-        [[self getSingleVC] updateToVoice];
-        [self.agoraKit stopPreview];
-        [self.agoraKit disableVideo];
-        [self.agoraKit muteLocalVideoStream:YES];
-    }
-    if (self.modal.currentCall.isCaller || self.modal.state == EaseCallState_Answering) {
-        [self.agoraKit stopPreview];
-        [self.agoraKit disableVideo];
-        [self.agoraKit muteLocalVideoStream:YES];
-    }
 }
 
 - (void)sendVideoToVoiceMsg

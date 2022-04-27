@@ -14,8 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface EaseCallStreamViewModel : NSObject
 
 @property (nonatomic, assign) NSInteger uid;
-@property (nonatomic, strong) NSString *showUsername;
 @property (nonatomic, strong) UIImage *showUserHeaderImage;
+@property (nonatomic, strong) NSString *showUsername;
+@property (nonatomic, strong) NSString *showStatusText;
 @property (nonatomic, strong) NSURL *showUserHeaderURL;
 @property (nonatomic, assign) EaseCallType callType;
 @property (nonatomic, assign) BOOL isMini;

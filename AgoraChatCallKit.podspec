@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
     s.frameworks = 'UIKit'
     s.libraries = 'stdc++'
     s.ios.deployment_target = '10.0'
-    s.source_files = 'Classes/**/*.{h,m,strings}'
+    s.source_files = 'Classes/**/*.{h,m}'
     s.public_header_files = [
       'Classes/Process/EaseCallManager.h',
       'Classes/Utils/EaseCallDefine.h',
@@ -21,7 +21,13 @@ Pod::Spec.new do |s|
       'Classes/AgoraChatCallKit.h',
     ]
     s.static_framework = true
-    s.resources = 'Assets/EaseCall.bundle'
+    s.resource_bundle = {
+      'AgoraChatCallKit' => [
+        'Assets/AgoraChatCallKit.xcassets',
+        'Assets/music.mp3',
+        'Classes/*.lproj'
+      ]
+    }
     s.dependency 'Agora_Chat_iOS'
     s.dependency 'Masonry'
     s.dependency 'AgoraRtcEngine_iOS', '3.6.1.2'

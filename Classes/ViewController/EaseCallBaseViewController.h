@@ -10,6 +10,10 @@
 @import AgoraChat;
 #import "EaseCallDefine.h"
 
+typedef struct EaseCallMiniViewPosition {
+    BOOL isLeft;
+    CGFloat top;
+} EaseCallMiniViewPosition;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,7 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) UIButton* speakerButton;
 @property (nonatomic,strong) UIButton* hangupButton;
 @property (nonatomic,strong) UIButton* answerButton;
-@property (nonatomic,strong) UILabel* timeLabel;
 @property (strong, nonatomic) NSTimer *timeTimer;
 @property (nonatomic, assign) int timeLength;
 @property (nonatomic,strong) UIButton* miniButton;
@@ -30,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) UIView* contentView;
 @property (nonatomic) BOOL isMini;
 @property (nonatomic, assign) EaseCallType callType;
+@property (nonatomic, assign) EaseCallMiniViewPosition miniViewPosition;
 
 - (void)hangupAction;
 - (void)muteAction;
@@ -40,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)usersInfoUpdated;
 - (void)callFinish;
 - (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec;
+
+- (void)setupLocalVideo;
+- (void)setupRemoteVideoView:(NSUInteger)uid;
 
 @end
 

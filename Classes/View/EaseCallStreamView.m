@@ -11,15 +11,19 @@
 #import "UIImage+Ext.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import "EaseCallStreamViewModel.h"
+#import "EaseCallManager.h"
 
 @interface EaseCallStreamView()
 
+@property (nonatomic, strong) UIImageView *bgImageView;
 @property (nonatomic, strong) UIView *speakingView;
-@property (nonatomic, strong) UIImageView *bgView;
+@property (nonatomic, strong) UIImageView *avatarImageView;
 @property (nonatomic, strong) UILabel *nameLabel;
+@property (nonatomic, strong) UILabel *statelabel;
 @property (nonatomic, strong) UIImageView *voiceStatusView;
 @property (nonatomic, strong) UIImageView *videoStatusView;
-@property (nonatomic) NSTimer *timeTimer;
+
+@property (nonatomic, strong) UIPanGestureRecognizer *panGes;
 
 @end
 
@@ -31,31 +35,37 @@
         self.backgroundColor = UIColor.blackColor;
         self.layer.masksToBounds = YES;
         
+        _bgImageView = [[UIImageView alloc] init];
+        _bgImageView.contentMode = UIViewContentModeScaleAspectFill;
+        [self.contentView addSubview:_bgImageView];
+        [_bgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(@0);
+        }];
+        
+        UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+        UIVisualEffectView *effectView = [[UIVisualEffectView alloc] initWithEffect:effect];
+        [_bgImageView addSubview:effectView];
+        [effectView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(@0);
+        }];
+        
         _speakingView = [[UIView alloc] init];
         _speakingView.hidden = YES;
         _speakingView.layer.cornerRadius = 44;
         _speakingView.backgroundColor = [UIColor colorWithRed:0.078 green:1 blue:0.447 alpha:1];
         [self.contentView addSubview:_speakingView];
         
-        _bgView = [[UIImageView alloc] init];
-        _bgView.contentMode = UIViewContentModeScaleAspectFit;
-        _bgView.userInteractionEnabled = YES;
-        _bgView.image = [UIImage imageNamedFromBundle:@"icon"];
-        [self.contentView addSubview:_bgView];
-        [_bgView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.centerX.equalTo(self);
-            make.centerY.equalTo(self).offset(-42);
-            make.width.equalTo(@100);
-            make.height.equalTo(@100);
-        }];
-        
+        _avatarImageView = [[UIImageView alloc] init];
+        _avatarImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _avatarImageView.layer.masksToBounds = YES;
+        [self.contentView addSubview:_avatarImageView];
         [_speakingView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.center.equalTo(_bgView);
+            make.center.equalTo(_avatarImageView);
             make.width.height.equalTo(@88);
         }];
         
         _displayView = [[UIView alloc] init];
-        _displayView.backgroundColor = UIColor.redColor;
+        _displayView.backgroundColor = UIColor.clearColor;
         [self.contentView addSubview:_displayView];
         [_displayView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self);
@@ -63,36 +73,35 @@
         
         _voiceStatusView = [[UIImageView alloc] init];
         _voiceStatusView.hidden = YES;
-        _voiceStatusView.image = [UIImage imageNamedFromBundle:@"microphonenclose"];
         [self.contentView addSubview:_voiceStatusView];
-        [_voiceStatusView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(@(-7));
-            make.right.equalTo(@-5);
-            make.width.height.equalTo(@20);
-        }];
         
         _videoStatusView = [[UIImageView alloc] init];
         _videoStatusView.hidden = YES;
+        _videoStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"video_close"];
         [self.contentView addSubview:_videoStatusView];
-        [_videoStatusView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(@(-7));
-            make.right.equalTo(@-32);
-            make.width.height.equalTo(@20);
-        }];
         
         _nameLabel = [[UILabel alloc] init];
         _nameLabel.textColor = UIColor.whiteColor;
         _nameLabel.font = [UIFont systemFontOfSize:14];
         _nameLabel.textAlignment = NSTextAlignmentCenter;
         [self.contentView addSubview:_nameLabel];
-        [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(@-8);
-            make.left.equalTo(@11);
+        
+        _statelabel = [[UILabel alloc] init];
+        _statelabel.textColor = UIColor.whiteColor;
+        _statelabel.font = [UIFont systemFontOfSize:16];
+        _statelabel.textAlignment = NSTextAlignmentCenter;
+        [self.contentView addSubview:_statelabel];
+        [_statelabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(_nameLabel);
+            make.top.equalTo(_nameLabel.mas_bottom).offset(4);
         }];
-        [self bringSubviewToFront:_nameLabel];
         
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapAction:)];
         [self addGestureRecognizer:tap];
+        
+        _panGes = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanAction:)];
+        _panGes.enabled = NO;
+        [self addGestureRecognizer:_panGes];
     }
     
     return self;
@@ -104,82 +113,37 @@
     [self update];
 }
 
+- (void)setPanGestureActionEnable:(BOOL)panGestureActionEnable
+{
+    _panGes.enabled = panGestureActionEnable;
+}
+
+- (BOOL)panGestureActionEnable
+{
+    return _panGes.isEnabled;
+}
+
 - (void)update
 {
     if (!_model.enableVoice) {
         _model.isTalking = NO;
     }
     
-    _bgView.hidden = _model.enableVideo;
-    _displayView.hidden = !_model.enableVideo;
-    _voiceStatusView.hidden = _model.enableVoice;
-    _videoStatusView.hidden = _model.enableVideo;
+    [self updateBG];
+    [self updateShowingImageAndUsername];
+    [self updateStatusViews];
     
-    _nameLabel.text = _model.showUsername;
-    if (!_bgView.hidden) {
+    NSString *defaultImageName = (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallType1v1Video) ? @"user_avatar_default" : @"group_avatar_default";
+    if (!_avatarImageView.hidden) {
         if (_model.showUserHeaderImage) {
-            _bgView.image = _model.showUserHeaderImage;
+            _avatarImageView.image = _model.showUserHeaderImage;
+            _bgImageView.image = _model.showUserHeaderImage;
         } else if (_model.showUserHeaderURL) {
-            [_bgView sd_setImageWithURL:_model.showUserHeaderURL];
+            [_avatarImageView sd_setImageWithURL:_model.showUserHeaderURL placeholderImage:[UIImage agoraChatCallKit_imageNamed:defaultImageName]];
+            [_bgImageView sd_setImageWithURL:_model.showUserHeaderURL placeholderImage:[UIImage agoraChatCallKit_imageNamed:defaultImageName]];
         } else {
-            _bgView.image = nil;
+            _avatarImageView.image = [UIImage agoraChatCallKit_imageNamed:defaultImageName];
         }
-    }
-    
-    if (_model.isMini) {
-        [_bgView mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@36);
-            make.centerY.equalTo(self).offset(-13);
-            make.centerX.equalTo(self.contentView);
-        }];
-        self.backgroundColor = [UIColor colorWithWhite:0.7 alpha:1];
-        self.layer.cornerRadius = 12;
-        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(@-8);
-            make.centerX.equalTo(self);
-        }];
-    } else {
-        if (_model.callType == EaseCallTypeMulti) {
-            [_bgView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.width.height.equalTo(@100);
-                make.centerY.equalTo(self).offset(-42);
-                make.centerX.equalTo(self.contentView);
-            }];
-            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.bottom.equalTo(@-8);
-                make.left.equalTo(@11);
-            }];
-            CGFloat right = 5;
-            if (!_voiceStatusView.hidden) {
-                [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                    make.right.equalTo(@(-right));
-                    make.width.height.equalTo(@20);
-                }];
-                right += 27;
-            }
-            if (!_videoStatusView.hidden) {
-                [_videoStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                    make.right.equalTo(@(-right));
-                    make.width.height.equalTo(@20);
-                }];
-            }
-        } else {
-            [_bgView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.width.height.equalTo(@80);
-                make.centerY.equalTo(self).offset(-42);
-                make.centerX.equalTo(self.contentView);
-            }];
-            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.top.equalTo(_bgView.mas_bottom).offset(12);
-                make.centerX.equalTo(_bgView);
-            }];
-            [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.width.height.equalTo(@20);
-                make.right.bottom.equalTo(_bgView);
-            }];
-        }
-        self.backgroundColor = UIColor.blackColor;
-        self.layer.cornerRadius = 0;
     }
     
     if (_model.callType != EaseCallTypeMultiAudio) {
@@ -187,6 +151,127 @@
     }
     
     _speakingView.hidden = !_model.isTalking;
+}
+
+- (void)updateBG
+{
+    _displayView.hidden = !_model.enableVideo;
+    if (_model.isMini) {
+        self.backgroundColor = [UIColor colorWithWhite:0.7 alpha:1];
+        self.layer.cornerRadius = 12;
+    } else {
+        self.backgroundColor = UIColor.clearColor;
+        self.layer.cornerRadius = 0;
+    }
+    _bgImageView.hidden = _avatarImageView.hidden || _model.isMini || _model.enableVideo || _model.callType == EaseCallTypeMultiAudio;
+}
+
+- (void)updateShowingImageAndUsername
+{
+    _nameLabel.text = _model.showUsername;
+    _nameLabel.font = [UIFont systemFontOfSize:14];
+    _statelabel.hidden = YES;
+    
+    if (_model.isMini) {
+        _nameLabel.hidden = NO;
+        _avatarImageView.hidden = _model.enableVideo;
+        _avatarImageView.layer.cornerRadius = 18;
+        [_avatarImageView mas_updateConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@36);
+            make.centerY.equalTo(self).offset(-13);
+            make.centerX.equalTo(self.contentView);
+        }];
+        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.equalTo(@-8);
+            make.centerX.equalTo(self);
+        }];
+        return;
+    }
+    
+    if (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallType1v1Video) {
+        if (_model.enableVideo && _model.joined) {
+            _avatarImageView.hidden = YES;
+            _nameLabel.hidden = YES;
+            _statelabel.hidden = YES;
+        } else {
+            _avatarImageView.hidden = NO;
+            _nameLabel.hidden = NO;
+            _nameLabel.font = [UIFont systemFontOfSize:24];
+            _statelabel.hidden = NO;
+            _statelabel.text = _model.showStatusText;
+            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.width.height.equalTo(@100);
+                make.centerY.equalTo(self).offset(-219);
+                make.centerX.equalTo(self.contentView);
+            }];
+            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.top.equalTo(_avatarImageView.mas_bottom).offset(7);
+                make.centerX.equalTo(self.contentView);
+            }];
+        }
+    } else if (_model.callType == EaseCallTypeMulti) {
+        _avatarImageView.layer.cornerRadius = 50;
+        [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@100);
+            make.centerY.equalTo(self).offset(-42);
+            make.centerX.equalTo(self.contentView);
+        }];
+        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.equalTo(@-8);
+            make.left.equalTo(@11);
+        }];
+    } else {
+        _avatarImageView.layer.cornerRadius = 40;
+        [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@80);
+            make.centerY.equalTo(self).offset(-42);
+            make.centerX.equalTo(self.contentView);
+        }];
+        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
+            make.centerX.equalTo(_avatarImageView);
+        }];
+    }
+}
+
+- (void)updateStatusViews
+{
+    if (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallTypeMultiAudio) {
+        _voiceStatusView.hidden = YES;
+        _videoStatusView.hidden = YES;
+    } else if (_model.callType == EaseCallType1v1Video) {
+        _voiceStatusView.hidden = _model.enableVoice || !_model.isMini;
+        _videoStatusView.hidden = _model.enableVideo || !_model.isMini;
+    } else if (_model.callType == EaseCallTypeMulti) {
+        _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
+        _videoStatusView.hidden = _model.enableVideo || !_model.joined || _model.isMini;
+    }
+    
+    if (_model.callType == EaseCallTypeMulti || _model.callType == EaseCallType1v1Video) {
+        _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"microphone_close"];
+        CGFloat right = 5;
+        if (!_voiceStatusView.hidden) {
+            [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.right.equalTo(@(-right));
+                make.width.height.equalTo(@20);
+                make.bottom.equalTo(@(-7));
+            }];
+            right += 27;
+        }
+        if (!_videoStatusView.hidden) {
+            [_videoStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.right.equalTo(@(-right));
+                make.width.height.equalTo(@20);
+                make.bottom.equalTo(@(-7));
+            }];
+        }
+    } else if (_model.callType == EaseCallTypeMultiAudio) {
+        _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"audio_call_microphone_close"];
+        [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@20);
+            make.right.bottom.equalTo(_avatarImageView);
+        }];
+    }
 }
 
 - (void)timeTalkingAction:(id)sender
@@ -204,6 +289,13 @@
         if (_delegate && [_delegate respondsToSelector:@selector(streamViewDidTap:)]) {
             [_delegate streamViewDidTap:self];
         }
+    }
+}
+
+- (void)handlePanAction:(UIPanGestureRecognizer *)pan
+{
+    if (_delegate && [_delegate respondsToSelector:@selector(streamView:didPan:)]) {
+        [_delegate streamView:self didPan:pan];
     }
 }
 

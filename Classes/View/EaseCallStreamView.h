@@ -16,8 +16,11 @@
 @property (nonatomic, strong) EaseCallStreamViewModel *model;
 @property (readonly) UIView *displayView;
 @property (nonatomic, weak) id<EaseCallStreamViewDelegate> delegate;
+@property (nonatomic, assign) BOOL panGestureActionEnable;
 
 - (void)update;
+- (void)updateShowingImageAndUsername;
+- (void)updateStatusViews;
 
 @end
 
@@ -26,5 +29,6 @@
 @optional
 
 - (void)streamViewDidTap:(EaseCallStreamView *)aVideoView;
+- (void)streamView:(EaseCallStreamView *)aVideoView didPan:(UIPanGestureRecognizer *)panGesture;
 
 @end

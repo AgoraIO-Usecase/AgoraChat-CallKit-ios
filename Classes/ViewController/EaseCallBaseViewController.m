@@ -20,9 +20,11 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
-    [self setubSubViews];
+    _miniViewPosition.isLeft = NO;
+    _miniViewPosition.top = 80;
     
+    [self setubSubViews];
+
     self.speakerButton.selected = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(usersInfoUpdated) name:@"EaseCallUserUpdated" object:nil];
 }
@@ -69,7 +71,7 @@
     
     self.miniButton = [[UIButton alloc] init];
     self.miniButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [self.miniButton setImage:[UIImage imageNamedFromBundle:@"mini"] forState:UIControlStateNormal];
+    [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"mini"] forState:UIControlStateNormal];
     [self.miniButton addTarget:self action:@selector(miniAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.miniButton];
     [self.miniButton setTintColor:[UIColor whiteColor]];
@@ -84,7 +86,7 @@
     }];
     
     self.switchCameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.switchCameraButton setImage:[UIImage imageNamedFromBundle:@"switchCamera"] forState:UIControlStateNormal];
+    [self.switchCameraButton setImage:[UIImage agoraChatCallKit_imageNamed:@"switchCamera"] forState:UIControlStateNormal];
     [self.switchCameraButton addTarget:self action:@selector(switchCameraAction) forControlEvents:UIControlEventTouchUpInside];
     [_contentView addSubview:self.switchCameraButton];
     [self.switchCameraButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -108,7 +110,7 @@
     
     self.hangupButton = [[UIButton alloc] init];
     self.hangupButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [self.hangupButton setImage:[UIImage imageNamedFromBundle:@"hangup"] forState:UIControlStateNormal];
+    [self.hangupButton setImage:[UIImage agoraChatCallKit_imageNamed:@"hangup"] forState:UIControlStateNormal];
     [self.hangupButton addTarget:self action:@selector(hangupAction) forControlEvents:UIControlEventTouchUpInside];
     [_buttonView addSubview:self.hangupButton];
     [self.hangupButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -120,7 +122,7 @@
     
     self.answerButton = [[UIButton alloc] init];
     self.answerButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
-    [self.answerButton setImage:[UIImage imageNamedFromBundle:@"answer"] forState:UIControlStateNormal];
+    [self.answerButton setImage:[UIImage agoraChatCallKit_imageNamed:@"answer"] forState:UIControlStateNormal];
     [self.answerButton addTarget:self action:@selector(answerAction) forControlEvents:UIControlEventTouchUpInside];
     [_buttonView addSubview:self.answerButton];
     [self.answerButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -130,8 +132,8 @@
     }];
     
     self.microphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.microphoneButton setImage:[UIImage imageNamedFromBundle:@"microphone_disable"] forState:UIControlStateNormal];
-    [self.microphoneButton setImage:[UIImage imageNamedFromBundle:@"microphone_enable"] forState:UIControlStateSelected];
+    [self.microphoneButton setImage:[UIImage agoraChatCallKit_imageNamed:@"microphone_enable"] forState:UIControlStateNormal];
+    [self.microphoneButton setImage:[UIImage agoraChatCallKit_imageNamed:@"microphone_disable"] forState:UIControlStateSelected];
     [self.microphoneButton addTarget:self action:@selector(muteAction) forControlEvents:UIControlEventTouchUpInside];
     [_buttonView addSubview:self.microphoneButton];
     [self.microphoneButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -142,8 +144,8 @@
     self.microphoneButton.selected = NO;
     
     _speakerButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_speakerButton setImage:[UIImage imageNamedFromBundle:@"speaker_disable"] forState:UIControlStateNormal];
-    [_speakerButton setImage:[UIImage imageNamedFromBundle:@"speaker_enable"] forState:UIControlStateSelected];
+    [_speakerButton setImage:[UIImage agoraChatCallKit_imageNamed:@"speaker_disable"] forState:UIControlStateNormal];
+    [_speakerButton setImage:[UIImage agoraChatCallKit_imageNamed:@"speaker_enable"] forState:UIControlStateSelected];
     [_speakerButton addTarget:self action:@selector(speakerAction) forControlEvents:UIControlEventTouchUpInside];
     [_buttonView addSubview:_speakerButton];
     [_speakerButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -153,8 +155,8 @@
     }];
 
     _enableCameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_enableCameraButton setImage:[UIImage imageNamedFromBundle:@"video_disable"] forState:UIControlStateNormal];
-    [_enableCameraButton setImage:[UIImage imageNamedFromBundle:@"video_enable"] forState:UIControlStateSelected];
+    [_enableCameraButton setImage:[UIImage agoraChatCallKit_imageNamed:@"video_enable"] forState:UIControlStateNormal];
+    [_enableCameraButton setImage:[UIImage agoraChatCallKit_imageNamed:@"video_disable"] forState:UIControlStateSelected];
     [_enableCameraButton addTarget:self action:@selector(enableVideoAction) forControlEvents:UIControlEventTouchUpInside];
     [_buttonView addSubview:_enableCameraButton];
     [_enableCameraButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -162,7 +164,6 @@
         make.bottom.equalTo(_buttonView);
         make.width.height.equalTo(@(size));
     }];
-    _timeLabel = nil;
 }
 
 - (UIView*)contentView
@@ -208,11 +209,12 @@
 - (void)enableVideoAction
 {
     self.enableCameraButton.selected = !self.enableCameraButton.isSelected;
-    [EaseCallManager.sharedManager enableVideo:self.enableCameraButton.selected];
+    [EaseCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
 }
 
 - (void)miniAction
 {
+    
 }
 
 - (void)callFinish
@@ -223,19 +225,7 @@
 #pragma mark - timer
 - (void)startTimer
 {
-    if (!_timeLabel) {
-        self.timeLabel = [[UILabel alloc] init];
-        self.timeLabel.backgroundColor = UIColor.clearColor;
-        self.timeLabel.font = [UIFont systemFontOfSize:25];
-        self.timeLabel.textColor = UIColor.whiteColor;
-        self.timeLabel.textAlignment = NSTextAlignmentRight;
-        self.timeLabel.text = @"00:00";
-        [self.contentView addSubview:self.timeLabel];
-        
-        [self.timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.bottom.equalTo(self.hangupButton.mas_top).with.offset(-20);
-            make.centerX.equalTo(self.contentView);
-        }];
+    if (!_timeTimer) {
         _timeTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(timeTimerAction:) userInfo:nil repeats:YES];
     }
 }
@@ -247,12 +237,11 @@
     int s = _timeLength - m * 60;
     
     [self callTimerDidChange:m sec:s];
-    
 }
 
 - (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec
 {
-    self.timeLabel.text = [NSString stringWithFormat:@"%02d:%02d", min, sec];
+    
 }
 
 @end

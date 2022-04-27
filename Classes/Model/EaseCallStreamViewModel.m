@@ -18,4 +18,13 @@
     return self;
 }
 
+- (void)setCallType:(EaseCallType)callType
+{
+    _callType = callType;
+}
+
+- (void)setEnableVideo:(BOOL)enableVideo {
+    _enableVideo = enableVideo;
+}
+
 @end

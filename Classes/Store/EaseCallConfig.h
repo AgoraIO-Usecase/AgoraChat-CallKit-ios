@@ -22,15 +22,14 @@ NS_ASSUME_NONNULL_BEGIN
  * nickName    用户头像
  */
 @property (nonatomic,strong)  NSURL* _Nullable  headImage;
-+(instancetype)userWithNickName:(NSString*)aNickName image:(NSURL*)aUrl;
+
++ (instancetype)userWithNickName:(NSString *)aNickName image:(NSURL *)aUrl;
+
 @end
 
 // 增加铃声、标题文本、环信ID与昵称的映射
 @interface EaseCallConfig : NSObject
-/*
- * nickName    用户头像
- */
-@property (nonatomic,strong)  NSURL*  defaultHeadImage;
+
 /*
  * callTimeOut    呼叫超时时间
  */
@@ -58,6 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSUInteger agoraUid;
 
 - (void)setUser:(NSString*)aUser info:(EaseCallUser*)aInfo;
+
 @end
 
 NS_ASSUME_NONNULL_END
