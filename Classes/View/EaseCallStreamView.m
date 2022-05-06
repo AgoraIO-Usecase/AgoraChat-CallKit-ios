@@ -16,6 +16,7 @@
 @interface EaseCallStreamView()
 
 @property (nonatomic, strong) UIImageView *bgImageView;
+@property (nonatomic, strong) UIVisualEffectView *effectView;
 @property (nonatomic, strong) UIView *speakingView;
 @property (nonatomic, strong) UIImageView *avatarImageView;
 @property (nonatomic, strong) UILabel *nameLabel;
@@ -32,7 +33,6 @@
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame]) {
-        self.backgroundColor = UIColor.blackColor;
         self.layer.masksToBounds = YES;
         
         _bgImageView = [[UIImageView alloc] init];
@@ -42,15 +42,17 @@
             make.edges.equalTo(@0);
         }];
         
-        UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
-        UIVisualEffectView *effectView = [[UIVisualEffectView alloc] initWithEffect:effect];
-        [_bgImageView addSubview:effectView];
-        [effectView mas_makeConstraints:^(MASConstraintMaker *make) {
+        UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+        _effectView = [[UIVisualEffectView alloc] initWithEffect:effect];
+        _effectView.layer.masksToBounds = YES;
+        [self.contentView addSubview:_effectView];
+        [_effectView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(@0);
         }];
         
         _displayView = [[UIView alloc] init];
         _displayView.backgroundColor = UIColor.clearColor;
+        _displayView.layer.masksToBounds = YES;
         [self.contentView addSubview:_displayView];
         [_displayView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self);
@@ -155,13 +157,18 @@
 {
     _displayView.hidden = !_model.enableVideo;
     if (_model.isMini) {
-        self.backgroundColor = [UIColor colorWithWhite:0.7 alpha:1];
         self.layer.cornerRadius = 12;
+        _effectView.layer.cornerRadius = 12;
+        _displayView.layer.cornerRadius = 12;
+        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
     } else {
-        self.backgroundColor = UIColor.clearColor;
         self.layer.cornerRadius = 0;
+        _effectView.layer.cornerRadius = 0;
+        _displayView.layer.cornerRadius = 0;
+        self.backgroundColor = UIColor.clearColor;
     }
     _bgImageView.hidden = _avatarImageView.hidden || _model.isMini || _model.enableVideo || _model.callType == EaseCallTypeMultiAudio;
+    _effectView.hidden = _bgImageView.hidden;
 }
 
 - (void)updateShowingImageAndUsername
@@ -170,8 +177,8 @@
     _nameLabel.font = [UIFont systemFontOfSize:14];
     
     if (_model.isMini) {
-        _nameLabel.hidden = NO;
         _avatarImageView.hidden = _model.enableVideo;
+        _nameLabel.hidden = _model.enableVideo;
         _avatarImageView.layer.cornerRadius = 18;
         [_avatarImageView mas_updateConstraints:^(MASConstraintMaker *make) {
             make.width.height.equalTo(@36);
@@ -208,6 +215,8 @@
         }
     } else if (_model.callType == EaseCallTypeMulti) {
         _statelabel.hidden = _model.joined;
+        _avatarImageView.hidden = _model.enableVideo;
+        _nameLabel.hidden = _avatarImageView.hidden;
         _avatarImageView.layer.cornerRadius = 50;
         if (_model.joined) {
             [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -231,29 +240,19 @@
             }];
         }
     } else {
-        _statelabel.hidden = _model.joined;
+        _statelabel.hidden = YES;
+        _avatarImageView.hidden = NO;
+        _nameLabel.hidden = NO;
         _avatarImageView.layer.cornerRadius = 40;
-        if (_model.joined) {
-            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.width.height.equalTo(@80);
-                make.centerY.equalTo(self).offset(-42);
-                make.centerX.equalTo(self.contentView);
-            }];
-            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
-                make.centerX.equalTo(_avatarImageView);
-            }];
-        } else {
-            [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.width.height.equalTo(@100);
-                make.centerY.equalTo(self).offset(-219);
-                make.centerX.equalTo(self.contentView);
-            }];
-            [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-                make.top.equalTo(_avatarImageView.mas_bottom).offset(7);
-                make.centerX.equalTo(self.contentView);
-            }];
-        }
+        [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.width.height.equalTo(@80);
+            make.centerY.equalTo(self).offset(-42);
+            make.centerX.equalTo(self.contentView);
+        }];
+        [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
+            make.centerX.equalTo(_avatarImageView);
+        }];
     }
     
     if (!_statelabel.hidden) {

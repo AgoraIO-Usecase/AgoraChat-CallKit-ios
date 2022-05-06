@@ -6,13 +6,12 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+@import Foundation;
+@import AgoraRtcKit;
+@import PushKit;
 #import "EaseCallConfig.h"
 #import "EaseCallDefine.h"
 #import "EaseCallError.h"
-#import <AgoraRtcKit/AgoraRtcEngineKit.h>
-
-@import PushKit;
 
 @protocol EaseCallDelegate <NSObject>
 /**
@@ -58,14 +57,17 @@
  * 通话中自己加入会议成功时触发该回调
  */
 - (void)callDidJoinChannel:(NSString*_Nonnull)aChannelName uid:(NSUInteger)aUid;
+
 @end
 
 @interface EaseCallManager : NSObject
-+(instancetype _Nonnull ) alloc __attribute__((unavailable("call sharedManager instead")));
-+(instancetype _Nonnull ) new __attribute__((unavailable("call sharedManager instead")));
--(instancetype _Nonnull ) copy __attribute__((unavailable("call sharedManager instead")));
--(instancetype _Nonnull ) mutableCopy __attribute__((unavailable("call sharedManager instead")));
+
++ (instancetype _Nonnull )alloc __attribute__((unavailable("call sharedManager instead")));
++ (instancetype _Nonnull )new __attribute__((unavailable("call sharedManager instead")));
+- (instancetype _Nonnull )copy __attribute__((unavailable("call sharedManager instead")));
+- (instancetype _Nonnull )mutableCopy __attribute__((unavailable("call sharedManager instead")));
 + (instancetype _Nonnull )sharedManager;
+
 /**
  * EaseCall模块初始化
  * @param aConfig         EaseCall的配置，包括用户昵称、头像、呼叫超时时间等
@@ -113,5 +115,9 @@
 - (void)pushRegistry:(nonnull PKPushRegistry *)registry didUpdatePushCredentials:(nonnull PKPushCredentials *)pushCredentials forType:(nonnull PKPushType)type;
 
 - (void)pushRegistry:(nonnull PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(nonnull PKPushPayload *)payload forType:(nonnull PKPushType)type withCompletionHandler:(nonnull void (^)(void))completion;
+
+- (void)reportIncomingCallWithTitle:(NSString *)title Sid:(NSString *)sid;
+
+- (void)clearRes;
 
 @end

@@ -9,6 +9,8 @@
 @import UIKit;
 @import AgoraChat;
 #import "EaseCallDefine.h"
+#import "AgoraChatCallIncomingAlertView.h"
+#import "EaseCallModal.h"
 
 typedef struct EaseCallMiniViewPosition {
     BOOL isLeft;
@@ -17,7 +19,7 @@ typedef struct EaseCallMiniViewPosition {
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EaseCallBaseViewController : UIViewController
+@interface EaseCallBaseViewController : UIViewController <IAgoraChatCallIncomingAlertViewShowable>
 
 @property (nonatomic, strong) UIView *buttonView;
 @property (nonatomic,strong) UIButton* microphoneButton;
@@ -26,7 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) UIButton* speakerButton;
 @property (nonatomic,strong) UIButton* hangupButton;
 @property (nonatomic,strong) UIButton* answerButton;
-@property (strong, nonatomic) NSTimer *timeTimer;
 @property (nonatomic, assign) int timeLength;
 @property (nonatomic,strong) UIButton* miniButton;
 @property (nonatomic,strong) UIImageView* bgImageView;
@@ -34,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL isMini;
 @property (nonatomic, assign) EaseCallType callType;
 @property (nonatomic, assign) EaseCallMiniViewPosition miniViewPosition;
+@property (nonatomic, assign) EaseCallState callState;
 
 - (void)hangupAction;
 - (void)muteAction;

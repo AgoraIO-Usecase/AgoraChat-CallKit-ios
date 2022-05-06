@@ -11,20 +11,30 @@
 #import <Masonry/Masonry.h>
 #import "UIImage+Ext.h"
 #import "EaseCallLocalizable.h"
+#import "AgoraChatCallIncomingAlertView.h"
 
 @interface EaseCallBaseViewController ()
+
+@property (nonatomic, strong) AgoraChatCallIncomingAlertView *alertView;
+@property (nonatomic, strong) NSTimer *timeTimer;
 
 @end
 
 @implementation EaseCallBaseViewController
 
+- (instancetype)init
+{
+    if (self = [super init]) {
+        _miniViewPosition.isLeft = NO;
+        _miniViewPosition.top = 80;
+    }
+    return self;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
-    _miniViewPosition.isLeft = NO;
-    _miniViewPosition.top = 80;
     
     [self setubSubViews];
-
     self.speakerButton.selected = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(usersInfoUpdated) name:@"EaseCallUserUpdated" object:nil];
 }
@@ -32,6 +42,7 @@
 - (void)dealloc
 {
     [NSNotificationCenter.defaultCenter removeObserver:self];
+    [self hideAlert];
 }
 
 - (void)usersInfoUpdated
@@ -174,6 +185,65 @@
     return _contentView;
 }
 
+- (void)showAlert
+{
+    if (!_alertView) {
+        __weak typeof(self)weakSelf = self;
+        NSString *title = self.showAlertTitle;
+        NSString *content = self.showAlertContent;
+        _alertView = [[AgoraChatCallIncomingAlertView alloc] initWithTitle:title content:content tapHandle:^{
+            [weakSelf hideAlert];
+            [weakSelf show];
+        } answerHandle:^{
+            [weakSelf hideAlert];
+            [weakSelf miniAction];
+            [weakSelf answerAction];
+        } hangupHandle:^{
+            [weakSelf hideAlert];
+            [weakSelf miniAction];
+            [weakSelf hangupAction];
+        }];
+    }
+    
+    UIView *keyWindow = UIApplication.sharedApplication.keyWindow;
+    [keyWindow addSubview:_alertView];
+    _alertView.frame = CGRectMake(8, 40, keyWindow.bounds.size.width - 16, 104);
+}
+
+- (void)hideAlert
+{
+    [_alertView removeFromSuperview];
+    _alertView = nil;
+}
+
+- (NSString *)showAlertTitle
+{
+    return @"";
+}
+
+- (NSString *)showAlertContent
+{
+    NSString *strType = EaseCallLocalizableString(@"voice", nil);
+    if (_callType == EaseCallTypeMulti) {
+        strType = EaseCallLocalizableString(@"conferenece", nil);
+    } else if (_callType == EaseCallTypeMultiAudio) {
+        strType = EaseCallLocalizableString(@"confereneceAudio", nil);
+    } else if (_callType == EaseCallType1v1Video) {
+        strType = EaseCallLocalizableString(@"video", nil);
+    }
+    return [NSString stringWithFormat: EaseCallLocalizableString(@"inviteInfo", nil), strType];
+}
+
+- (void)show
+{
+    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIViewController *rootVC = keyWindow.rootViewController;
+    if (rootVC.presentationController && rootVC.presentationController.presentedViewController) {
+        [rootVC.presentationController.presentedViewController dismissViewControllerAnimated:NO completion:nil];
+    }
+    [rootVC presentViewController:self animated:NO completion:nil];
+}
+
 - (void)answerAction
 {
     [EaseCallManager.sharedManager acceptAction];
@@ -219,7 +289,10 @@
 
 - (void)callFinish
 {
-    
+    if (_timeTimer) {
+        [_timeTimer invalidate];
+        _timeTimer = nil;
+    }
 }
 
 #pragma mark - timer

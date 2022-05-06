@@ -10,11 +10,12 @@
 #import "EaseCallDefine.h"
 #import <AgoraRtcKit/AgoraRtcEngineKit.h>
 
-typedef NS_ENUM(NSInteger,EaseCallState) {
+typedef NS_ENUM(NSInteger, EaseCallState) {
     EaseCallState_Idle,
     EaseCallState_Outgoing,
     EaseCallState_Alerting,
-    EaseCallState_Answering
+    EaseCallState_Answering,
+    EaseCallState_Refuse,
 };
 
 @protocol EaseCallModalDelegate <NSObject>

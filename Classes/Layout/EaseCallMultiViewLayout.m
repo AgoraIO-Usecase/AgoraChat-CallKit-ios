@@ -132,10 +132,6 @@
 
 - (CGRect)audioFrame:(NSIndexPath *)indexPath
 {
-    if (_allCount == 1) {
-        return CGRectMake(0, 0, _collectionViewSize.width, _collectionViewSize.height);
-    }
-    
     NSInteger item = indexPath.item;
     CGFloat x = (item + 1) / 9 * _collectionViewSize.width + item % 3 * _collectionViewSize.width / 3 + _voiceOffset.x;
     CGFloat y = item % 9 / 3 * _collectionViewSize.height / 3 + _voiceOffset.y;

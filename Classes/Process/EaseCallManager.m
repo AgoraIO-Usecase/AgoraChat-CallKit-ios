@@ -25,6 +25,7 @@ static NSString* kCallType = @"type";
 static NSString* kCallerDevId = @"callerDevId";
 static NSString* kCallId = @"callId";
 static NSString* kTs = @"ts";
+static NSString* kCallDuration = @"callDuration";
 static NSString* kMsgType = @"msgType";
 static NSString* kCalleeDevId = @"calleeDevId";
 static NSString* kCallStatus = @"status";
@@ -62,6 +63,10 @@ static NSString* kExt = @"ext";
 @property (nonatomic,weak) NSTimer* ringTimer;
 @property (nonatomic,strong) EaseCallBaseViewController *callVC;
 @property (nonatomic) BOOL bNeedSwitchToVoice;
+
+
+@property (nonatomic, strong) CXProvider *provider;
+@property (nonatomic, strong) CXCallController *callController;
 
 @end
 
@@ -205,7 +210,7 @@ static EaseCallManager *easeCallManager = nil;
 }
 
 - (void)startSingleCallWithUId:(NSString*)uId type:(EaseCallType)aType ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,EaseCallError*))aCompletionBlock {
-    if ([uId length] == 0) {
+    if (uId.length <= 0) {
         NSLog(@"makeCall faild!!remoteUid is empty");
         if (aCompletionBlock) {
             EaseCallError *error = [EaseCallError errorWithType:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
@@ -248,14 +253,14 @@ static EaseCallManager *easeCallManager = nil;
 // 是否处于忙碌状态
 - (BOOL)isBusy
 {
-    return self.modal.currentCall && self.modal.state != EaseCallState_Idle;
+    return self.modal.currentCall && (self.modal.state != EaseCallState_Idle && self.modal.state != EaseCallState_Refuse);
 }
 
 - (void)clearRes
 {
     NSLog(@"cleraRes");
-    if(self.modal.currentCall) {
-        if(self.modal.currentCall.callType != EaseCallType1v1Audio) {
+    if (self.modal.currentCall) {
+        if (self.modal.currentCall.callType != EaseCallType1v1Audio) {
             [self.agoraKit stopPreview];
             [self.agoraKit disableVideo];
         }
@@ -326,15 +331,19 @@ static EaseCallManager *easeCallManager = nil;
 
 - (void)refreshUIOutgoing
 {
-    if (self.modal.currentCall) {
-        if (!self.callVC) {
-            if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
-                self.callVC = [[EaseCallMultiViewController alloc] init];
-            } else {
-                self.callVC = [[EaseCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
-            }
-            self.callVC.callType = self.modal.currentCall.callType;
+    if (!self.modal.currentCall) {
+        return;
+    }
+    
+    if (!self.callVC) {
+        if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
+            self.callVC = [[EaseCallMultiViewController alloc] init];
+        } else {
+            self.callVC = [[EaseCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
+            ((EaseCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
         }
+        self.callVC.callType = self.modal.currentCall.callType;
+        
         self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
         __weak typeof(self) weakself = self;
         UIWindow *keyWindow = [self getKeyWindow];
@@ -346,9 +355,9 @@ static EaseCallManager *easeCallManager = nil;
             if (weakself.modal.currentCall.callType == EaseCallType1v1Video) {
                 [weakself.callVC setupLocalVideo];
             }
-            [weakself fetchToken];
         }];
     }
+    [self fetchToken];
 }
 
 - (void)refreshUIAnswering
@@ -388,34 +397,14 @@ static EaseCallManager *easeCallManager = nil;
     [self playSound];
     if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
         self.callVC = [[EaseCallMultiViewController alloc] init];
-        self.callVC.callType = self.modal.currentCall.callType;
         [self getMultiVC].inviterId = self.modal.currentCall.remoteUserAccount;
-        self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
-        UIWindow* keyWindow = [self getKeyWindow];
-        if (!keyWindow) {
-            return;
-        }
-        UIViewController* rootVC = keyWindow.rootViewController;
-        if (rootVC.presentationController && rootVC.presentationController.presentedViewController) {
-            [rootVC.presentationController.presentedViewController dismissViewControllerAnimated:NO completion:nil];
-        }
-        [rootVC presentViewController:self.callVC animated:NO completion:nil];
     } else {
-        UIWindow *keyWindow = [self getKeyWindow];
-        if (!keyWindow) {
-            return;
-        }
         self.callVC = [[EaseCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
-        self.callVC.callType = self.modal.currentCall.callType;
-        self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
-        UIViewController* rootVC = keyWindow.rootViewController;
-        if (rootVC.presentationController && rootVC.presentationController.presentedViewController) {
-            [rootVC.presentationController.presentedViewController dismissViewControllerAnimated:NO completion:nil];
-        }
-        [rootVC presentViewController:self.callVC animated:NO completion:^{
-            
-        }];
+        ((EaseCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
     }
+    self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
+    self.callVC.callType = self.modal.currentCall.callType;
+    [self.callVC showAlert];
     [self _startRingTimer:self.modal.currentCall.callId];
 }
 
@@ -441,20 +430,66 @@ static EaseCallManager *easeCallManager = nil;
 - (void)callStateWillChangeTo:(EaseCallState)newState from:(EaseCallState)preState
 {
     NSLog(@"callState will chageto:%ld from:%ld",newState,(long)preState);
-    __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        self.callVC.callState = self.modal.state;
         switch (newState) {
             case EaseCallState_Idle:
-                [weakself clearRes];
+                if (preState == EaseCallState_Answering && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
+                    NSString *callId = self.modal.currentCall.callId;
+                    NSString *uid = self.modal.currentCall.remoteUserAccount;
+                    NSDictionary *ext = @{
+                        kMsgType:kMsgTypeValue,
+                        kAction:kCancelCallAction,
+                        kCallId:callId,
+                        kCallerDevId:self.modal.curDevId,
+                        kTs:[self getTs],
+                        kCallDuration:@(self.callVC.timeLength),
+                    };
+                    AgoraChatConversation *conversation = [AgoraChatClient.sharedClient.chatManager getConversationWithConvId:uid];
+                    if (conversation) {
+                        NSString *text = self.modal.currentCall.callType == EaseCallType1v1Audio ? @"Audio Call Ended" : @"Video Call Ended";
+                        AgoraChatTextMessageBody *body = [[AgoraChatTextMessageBody alloc] initWithText:text];
+                        AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:uid from:self.modal.curUserAccount to:uid body:body ext:ext];
+                        [conversation insertMessage:msg error:nil];
+                    }
+                }
+                [self clearRes];
                 break;
             case EaseCallState_Outgoing:
-                [weakself refreshUIOutgoing];
+                [self refreshUIOutgoing];
                 break;
             case EaseCallState_Alerting:
-                [weakself refreshUIAlerting];
+                [self refreshUIAlerting];
                 break;
             case EaseCallState_Answering:
-                [weakself refreshUIAnswering];
+                [self refreshUIAnswering];
+                break;
+            case EaseCallState_Refuse:
+                if (self.modal.state == EaseCallState_Refuse && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
+                    
+                    self.modal.currentCall = nil;
+                    
+                    NSArray *timers = [self.callTimerDic allValues];
+                    for (NSTimer *tm in timers) {
+                        [tm invalidate];
+                    }
+                    [self.callTimerDic removeAllObjects];
+                    NSArray *alertTimers = [self.alertTimerDic allValues];
+                    for (NSTimer *tm in alertTimers) {
+                        [tm invalidate];
+                    }
+                    if (self.confirmTimer) {
+                        [self.confirmTimer invalidate];
+                        self.confirmTimer = nil;
+                    }
+                    if (self.ringTimer) {
+                        [self.ringTimer invalidate];
+                        self.ringTimer = nil;
+                    }
+                    
+                } else {
+                    [self clearRes];
+                }
                 break;
             default:
                 break;
@@ -762,7 +797,7 @@ static EaseCallManager *easeCallManager = nil;
     };
     void (^parseAnswerMsgExt)(NSDictionary*) = ^void (NSDictionary* ext) {
         //[[EMClient sharedClient] log:[NSString stringWithFormat:@"parseAnswerMsgExt currentCallId:%@,state:%ld",weakself.modal.currentCall.callId,weakself.modal.state]];
-        if(weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && [weakself.modal.curDevId isEqualToString:callerDevId]) {
+        if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && [weakself.modal.curDevId isEqualToString:callerDevId]) {
             if (weakself.modal.currentCall.callType == EaseCallTypeMulti || weakself.modal.currentCall.callType == EaseCallTypeMultiAudio) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (![result isEqualToString:kAcceptResult]) {
@@ -789,10 +824,13 @@ static EaseCallManager *easeCallManager = nil;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
                             [weakself callBackCallEnd:EaseCallEndReasonRefuse];
+                            weakself.modal.state = EaseCallState_Refuse;
                         } else if ([result isEqualToString:kBusyResult]) {
                             [weakself callBackCallEnd:EaseCallEndReasonBusy];
+                            weakself.modal.state = EaseCallState_Idle;
+                        } else {
+                            weakself.modal.state = EaseCallState_Idle;
                         }
-                        weakself.modal.state = EaseCallState_Idle;
                     }
                     [weakself sendConfirmAnswerMsgToCallee:from callId:callId result:result devId:calleeDevId];
                 }
@@ -1373,6 +1411,11 @@ static EaseCallManager *easeCallManager = nil;
     [self.agoraKit setupRemoteVideo:canvas];
 }
 
+- (void)startPreview
+{
+    [self.agoraKit startPreview];
+}
+
 - (void)setupLocalVideo:(UIView *)displayView
 {
     AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
@@ -1402,13 +1445,13 @@ static EaseCallManager *easeCallManager = nil;
         }
         [weakself.agoraKit joinChannelByToken:weakself.modal.agoraRTCToken channelId:weakself.modal.currentCall.channelName info:@"" uid:self.modal.agoraUid joinSuccess:^(NSString * _Nonnull channel, NSUInteger uid, NSInteger elapsed) {
             NSLog(@"join success");
-            if ([self.delegate respondsToSelector:@selector(callDidJoinChannel:uid:)]) {
-                [self.delegate callDidJoinChannel:channel uid:uid];
+            if ([weakself.delegate respondsToSelector:@selector(callDidJoinChannel:uid:)]) {
+                [weakself.delegate callDidJoinChannel:channel uid:uid];
             }
             weakself.modal.hasJoinedChannel = YES;
             [weakself.modal.currentCall.allUserAccounts setObject:AgoraChatClient.sharedClient.currentUsername forKey:@(uid)];
-            if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
-                [self muteLocalVideoStream:YES];
+            if (weakself.modal.currentCall.callType == EaseCallTypeMulti || weakself.modal.currentCall.callType == EaseCallTypeMultiAudio) {
+                [weakself muteLocalVideoStream:YES];
             }
         }];
         
@@ -1420,5 +1463,61 @@ static EaseCallManager *easeCallManager = nil;
 {
     [self sendVideoToVoiceMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId];
 }
+
+@end
+
+@implementation EaseCallManager (CallKit)
+
+- (void)reportIncomingCallWithTitle:(NSString *)title Sid:(NSString *)sid
+{
+    CXProviderConfiguration *configInternal = nil;
+    configInternal = [[CXProviderConfiguration alloc] initWithLocalizedName:@"闲鱼"];
+    configInternal.supportsVideo = true;
+    configInternal.maximumCallsPerCallGroup = 1;
+    configInternal.maximumCallGroups = 1;
+    configInternal.supportedHandleTypes = [[NSSet alloc] initWithObjects:[NSNumber numberWithInt:CXHandleTypeGeneric],[NSNumber numberWithInt:CXHandleTypePhoneNumber], nil];
+    UIImage* iconMaskImage = [UIImage imageNamed:@"IconMask"];
+    configInternal.iconTemplateImageData = UIImagePNGRepresentation(iconMaskImage);
+    
+    self.provider = [[CXProvider alloc] initWithConfiguration: configInternal];
+    [self.provider setDelegate:self queue:dispatch_get_main_queue()];
+    self.callController = [[CXCallController alloc] initWithQueue:dispatch_get_main_queue()];
+    
+    CXCallUpdate* update = [[CXCallUpdate alloc] init];
+    update.supportsDTMF = false;
+    update.supportsHolding = false;
+    update.supportsGrouping = false;
+    update.supportsUngrouping = false;
+    update.hasVideo = false;
+    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:sid];
+    update.localizedCallerName = title;
+    NSUUID *uuid = [NSUUID UUID];
+    //弹出电话页面
+    [self.provider reportNewIncomingCallWithUUID:uuid update:update completion:^(NSError * _Nullable error) {
+        
+    }];
+}
+
+- (void)providerDidReset:(CXProvider *)provider
+{
+        
+}
+
+- (void)provider:(CXProvider *)provider performStartCallAction:(CXStartCallAction *)action {
+    
+}
+
+- (void)provider:(CXProvider *)provider performAnswerCallAction:(nonnull CXAnswerCallAction *)action {
+    
+}
+
+- (void)provider:(CXProvider *)provider performEndCallAction:(nonnull CXEndCallAction *)action {
+    
+}
+
+- (void)provider:(CXProvider *)provider performSetMutedCallAction:(nonnull CXSetMutedCallAction *)action {
+    
+}
+
 
 @end

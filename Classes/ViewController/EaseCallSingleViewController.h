@@ -16,6 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic) BOOL isCaller;
 @property (nonatomic) BOOL isConnected;
+@property (nonatomic, copy) NSString *remoteUserAccount;
 
 - (instancetype)initWithisCaller:(BOOL)aIsCaller type:(EaseCallType)aType  remoteName:(NSString*)aRemoteName;
 - (void)setRemoteMute:(BOOL)aMuted;

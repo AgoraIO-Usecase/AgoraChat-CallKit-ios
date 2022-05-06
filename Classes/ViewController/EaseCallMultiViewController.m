@@ -34,24 +34,50 @@
 
 @implementation EaseCallMultiViewController
 
+- (instancetype)init
+{
+    if (self = [super init]) {
+        _allUserList = [NSMutableArray array];
+        _joinedUserDictionary = [NSMutableDictionary dictionary];
+        _unjoinedUserDictionary = [NSMutableDictionary dictionary];
+        _isTalkingDictionary = [NSMutableDictionary dictionary];
+        
+        EaseCallStreamViewModel *model = [[EaseCallStreamViewModel alloc] init];
+        model.uid = 0;
+        model.enableVideo = self.callType == EaseCallTypeMulti;
+        model.callType = self.callType;
+        model.isMini = NO;
+        model.joined = self.inviterId.length <= 0;
+        model.showUsername = AgoraChatClient.sharedClient.currentUsername;
+        model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
+        [_allUserList addObject:model];
+        _joinedUserDictionary[@(0)] = model;
+    }
+    return self;
+}
+
+- (void)setCallType:(EaseCallType)callType
+{
+    [super setCallType:callType];
+    
+    for (EaseCallStreamViewModel *model in _allUserList) {
+        model.callType = callType;
+    }
+    [_collectionView reloadData];
+    if (callType == EaseCallTypeMulti) {
+        _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
+        if (_allUserList[0].enableVideo) {
+            [EaseCallManager.sharedManager startPreview];
+        }
+        for (EaseCallStreamView *view in _collectionView.visibleCells) {
+            [view update];
+        }
+    }
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    _allUserList = [NSMutableArray array];
-    _joinedUserDictionary = [NSMutableDictionary dictionary];
-    _unjoinedUserDictionary = [NSMutableDictionary dictionary];
-    _isTalkingDictionary = [NSMutableDictionary dictionary];
-    
-    EaseCallStreamViewModel *model = [[EaseCallStreamViewModel alloc] init];
-    model.uid = 0;
-    model.enableVideo = self.callType == EaseCallTypeMulti;
-    model.callType = self.callType;
-    model.isMini = NO;
-    model.joined = self.inviterId.length <= 0;
-    model.showUsername = AgoraChatClient.sharedClient.currentUsername;
-    model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
-    [_allUserList addObject:model];
-    _joinedUserDictionary[@(0)] = model;
     
     __weak typeof(self)weakSelf = self;
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
@@ -71,10 +97,6 @@
     [self _refreshViewPos];
 }
 
-- (void)setCallType:(EaseCallType)callType {
-    [super setCallType:callType];
-}
-
 - (void)setupSubViews
 {
     self.contentView.backgroundColor = [UIColor colorWithRed:40.0 / 255 green:40.0 / 255 blue:45.0 / 255 alpha:1];
@@ -82,19 +104,9 @@
     [self.inviteButton setImage:[UIImage agoraChatCallKit_imageNamed:@"invite"] forState:UIControlStateNormal];
     [self.inviteButton addTarget:self action:@selector(inviteAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.inviteButton];
-    [self.inviteButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(self.miniButton);
-        make.right.equalTo(@-18);
-        make.width.height.equalTo(@50);
-    }];
+    
     [self.contentView bringSubviewToFront:self.inviteButton];
     [self.inviteButton setHidden:YES];
-    
-    [self.switchCameraButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(self.miniButton);
-        make.width.height.equalTo(@40);
-        make.right.equalTo(self.inviteButton.mas_left).offset(-16);
-    }];
     
     __weak typeof(self)weakSelf = self;
     EaseCallMultiViewLayout *layout = [[EaseCallMultiViewLayout alloc] init];
@@ -110,7 +122,7 @@
     _collectionView.delegate = self;
     _collectionView.backgroundColor = UIColor.clearColor;
     [_collectionView registerClass:EaseCallStreamView.class forCellWithReuseIdentifier:@"cell"];
-    [self.contentView addSubview:_collectionView];
+    [self.contentView insertSubview:_collectionView atIndex:0];
     [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.centerX.equalTo(self.contentView);
         make.top.equalTo(self.callType == EaseCallTypeMulti ? @0 : @97);
@@ -132,6 +144,22 @@
         self.inviteButton.hidden = NO;
     }
     
+    [self.inviteButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(self.miniButton);
+        make.right.equalTo(@-18);
+        make.width.height.equalTo(@50);
+    }];
+    
+    [self.switchCameraButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(self.miniButton);
+        make.width.height.equalTo(@40);
+        if (_inviteButton.hidden) {
+            make.right.equalTo(@-18);
+        } else {
+            make.right.equalTo(self.inviteButton.mas_left).offset(-16);
+        }
+    }];
+    
     [self.contentView bringSubviewToFront:self.miniButton];
 }
 
@@ -149,6 +177,9 @@
         model.isMini = NO;
         model.isTalking = NO;
         model.enableVoice = YES;
+        NSString *userName = [EaseCallManager.sharedManager getUserNameByUid:uId];
+        model.showUserHeaderURL = [EaseCallManager.sharedManager getNicknameByUserName:userName];
+        model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:userName];
         isNew = YES;
     }
     model.enableVideo = aEnableVideo;
@@ -402,8 +433,9 @@
 
 - (void)miniAction
 {
-    if (((EaseCallMultiViewLayout *)_collectionView.collectionViewLayout).bigIndex != -1) {
-        ((EaseCallMultiViewLayout *)_collectionView.collectionViewLayout).bigIndex = -1;
+    EaseCallMultiViewLayout *layout = _collectionView.collectionViewLayout;
+    if (layout && layout.bigIndex != -1) {
+        layout.bigIndex = -1;
         [_collectionView reloadData];
         [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"mini"] forState:UIControlStateNormal];
         return;
@@ -445,7 +477,8 @@
 - (void)updateMiniViewPosition
 {
     EaseCallMiniViewPosition position;
-    position.isLeft = _miniView.center.x <= self.contentView.bounds.size.width / 2;
+    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    position.isLeft = _miniView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _miniView.frame.origin.y;
     self.miniViewPosition = position;
 }
@@ -454,7 +487,8 @@
 {
     CGFloat x = 20;
     if (!self.miniViewPosition.isLeft) {
-        x = self.contentView.bounds.size.width - 96;
+        UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+        x = keyWindow.bounds.size.width - 96;
     }
     _miniView.frame = CGRectMake(x, self.miniViewPosition.top, 76, 76);
 }
@@ -472,7 +506,10 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         for (EaseCallStreamViewModel *model in _allUserList) {
             NSString *username = [EaseCallManager.sharedManager getUserNameByUid:@(model.uid)];
-            model.showUsername = username;
+            if (username) {
+                model.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:username];
+                model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:username];
+            }
         }
         for (EaseCallStreamView *cell in _collectionView.visibleCells) {
             [cell update];
@@ -584,6 +621,16 @@
     
     if (model.uid != 0) {
         [EaseCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];
+    }
+}
+
+#pragma mark - IAgoraChatCallIncomingAlertViewShowable
+- (NSString *)showAlertTitle
+{
+    if (self.inviterId.length > 0) {
+        return [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
+    } else {
+        return [super showAlertTitle];
     }
 }
 
