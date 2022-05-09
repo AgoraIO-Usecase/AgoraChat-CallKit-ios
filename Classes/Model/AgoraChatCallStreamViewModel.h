@@ -7,18 +7,18 @@
 
 @import Foundation;
 
-#import "EaseCallDefine.h"
+#import "AgoraChatCallDefine.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EaseCallStreamViewModel : NSObject
+@interface AgoraChatCallStreamViewModel : NSObject
 
 @property (nonatomic, assign) NSInteger uid;
 @property (nonatomic, strong) UIImage *showUserHeaderImage;
 @property (nonatomic, strong) NSString *showUsername;
 @property (nonatomic, strong) NSString *showStatusText;
 @property (nonatomic, strong) NSURL *showUserHeaderURL;
-@property (nonatomic, assign) EaseCallType callType;
+@property (nonatomic, assign) AgoraChatCallType callType;
 @property (nonatomic, assign) BOOL isMini;
 @property (nonatomic, assign) BOOL joined;
 @property (nonatomic, assign) BOOL enableVoice;

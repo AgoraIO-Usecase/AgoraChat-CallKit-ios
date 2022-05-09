@@ -19,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (readonly) NSString *showAlertTitle;
 @property (readonly) NSString *showAlertContent;
+
 - (void)showAlert;
 - (void)hideAlert;
 

@@ -6,14 +6,14 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallStreamView.h"
+#import "AgoraChatCallStreamView.h"
 #import <Masonry/Masonry.h>
 #import "UIImage+Ext.h"
 #import <SDWebImage/UIImageView+WebCache.h>
-#import "EaseCallStreamViewModel.h"
-#import "EaseCallManager.h"
+#import "AgoraChatCallStreamViewModel.h"
+#import "AgoraChatCallManager.h"
 
-@interface EaseCallStreamView()
+@interface AgoraChatCallStreamView()
 
 @property (nonatomic, strong) UIImageView *bgImageView;
 @property (nonatomic, strong) UIVisualEffectView *effectView;
@@ -28,7 +28,7 @@
 
 @end
 
-@implementation EaseCallStreamView
+@implementation AgoraChatCallStreamView
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
@@ -109,7 +109,7 @@
     return self;
 }
 
-- (void)setModel:(EaseCallStreamViewModel *)model
+- (void)setModel:(AgoraChatCallStreamViewModel *)model
 {
     _model = model;
     [self update];
@@ -177,6 +177,7 @@
     _nameLabel.font = [UIFont systemFontOfSize:14];
     
     if (_model.isMini) {
+        _statelabel.hidden = YES;
         _avatarImageView.hidden = _model.enableVideo;
         _nameLabel.hidden = _model.enableVideo;
         _avatarImageView.layer.cornerRadius = 18;

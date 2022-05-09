@@ -1,16 +1,16 @@
 //
-//  EaseCallConfig.m
+//  AgoraChatCallConfig.m
 //  EMiOSDemo
 //
 //  Created by lixiaoming on 2020/12/9.
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallConfig.h"
+#import "AgoraChatCallConfig.h"
 
 #import "UIImage+Ext.h"
 
-@implementation EaseCallUser
+@implementation AgoraChatCallUser
 - (instancetype)init
 {
     self = [super init];
@@ -22,7 +22,7 @@
 
 + (instancetype)userWithNickName:(NSString*)aNickName image:(NSURL*)aUrl
 {
-    EaseCallUser *user = [[EaseCallUser alloc] init];
+    AgoraChatCallUser *user = [[AgoraChatCallUser alloc] init];
     if (aNickName.length > 0) {
         user.nickName = aNickName;
     }
@@ -33,11 +33,11 @@
 }
 @end
 
-@interface EaseCallConfig ()
+@interface AgoraChatCallConfig ()
 
 @end
 
-@implementation EaseCallConfig
+@implementation AgoraChatCallConfig
 
 - (instancetype)init
 {
@@ -71,17 +71,17 @@
     return _encoderConfiguration;
 }
 
-- (void)setUsers:(NSMutableDictionary<NSString *,EaseCallUser *> *)users
+- (void)setUsers:(NSMutableDictionary<NSString *,AgoraChatCallUser *> *)users
 {
     _users = [users mutableCopy];
-    [NSNotificationCenter.defaultCenter postNotificationName:@"EaseCallUserUpdated" object:nil];
+    [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
 }
 
-- (void)setUser:(NSString*)aUser info:(EaseCallUser*)aInfo
+- (void)setUser:(NSString*)aUser info:(AgoraChatCallUser*)aInfo
 {
     if (aUser.length > 0 && aInfo) {
         [self.users setObject:aInfo forKey:aUser];
-        [NSNotificationCenter.defaultCenter postNotificationName:@"EaseCallUserUpdated" object:nil];
+        [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
     }
 }
 

@@ -1,14 +1,14 @@
 //
-//  EaseCallManager+Private.h
+//  AgoraChatCallManager+Private.h
 //  EMiOSDemo
 //
 //  Created by lixiaoming on 2020/12/3.
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallManager.h"
+#import "AgoraChatCallManager.h"
 
-@interface EaseCallManager (Private)
+@interface AgoraChatCallManager (Private)
 
 - (void)switchCameraAction;
 - (void)hangupAction;
@@ -29,4 +29,4 @@
 - (void)switchToVoice;
 - (void)sendVideoToVoiceMsg;
 
-@end /* EaseCallManager_Private_h */
+@end /* AgoraChatCallManager_Private_h */

@@ -1,17 +1,17 @@
 //
-//  EaseCallError.m
+//  AgoraChatCallError.m
 //  EaseIM
 //
 //  Created by lixiaoming on 2021/1/29.
 //  Copyright © 2021 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallError.h"
+#import "AgoraChatCallError.h"
 
-@implementation EaseCallError
-+(instancetype)errorWithType:(EaseCallErrorType)aType code:(NSInteger)aErrCode description:(NSString*)aDescription
+@implementation AgoraChatCallError
++(instancetype)errorWithType:(AgoarChatCallErrorType)aType code:(NSInteger)aErrCode description:(NSString*)aDescription
 {
-    EaseCallError* error = [[EaseCallError alloc] init];
+    AgoraChatCallError* error = [[AgoraChatCallError alloc] init];
     if(error) {
         error.aErrorType = aType;
         error.errCode = aErrCode;

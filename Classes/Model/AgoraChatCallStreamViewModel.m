@@ -5,9 +5,9 @@
 //  Created by 冯钊 on 2022/4/20.
 //
 
-#import "EaseCallStreamViewModel.h"
+#import "AgoraChatCallStreamViewModel.h"
 
-@implementation EaseCallStreamViewModel
+@implementation AgoraChatCallStreamViewModel
 
 - (instancetype)init
 {
@@ -18,7 +18,7 @@
     return self;
 }
 
-- (void)setCallType:(EaseCallType)callType
+- (void)setCallType:(AgoraChatCallType)callType
 {
     _callType = callType;
 }

@@ -6,9 +6,9 @@
 //  Copyright © 2021 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallModal.h"
+#import "AgoraChatCallModal.h"
 
-@implementation ECCall
+@implementation AgoraChatCall
 
 - (NSMutableDictionary*)allUserAccounts
 {
@@ -19,13 +19,13 @@
 }
 @end
 
-@interface EaseCallModal ()
-@property (nonatomic,weak) id<EaseCallModalDelegate> delegate;
+@interface AgoraChatCallModal ()
+@property (nonatomic,weak) id<AgoraChatCallModalDelegate> delegate;
 @end
 
-@implementation EaseCallModal
+@implementation AgoraChatCallModal
 @synthesize state = _state;
-- (instancetype)initWithDelegate:(id<EaseCallModalDelegate>)delegate
+- (instancetype)initWithDelegate:(id<AgoraChatCallModalDelegate>)delegate
 {
     self = [super init];
     if(self) {
@@ -51,7 +51,7 @@
     return _curDevId;
 }
 
-- (void)setState:(EaseCallState)state
+- (void)setState:(AgoraChatCallState)state
 {
     if(self.delegate && state != _state) {
         [self.delegate callStateWillChangeTo:state from:_state];
@@ -59,7 +59,7 @@
     _state = state;
 }
 
-- (EaseCallState)state
+- (AgoraChatCallState)state
 {
     return _state;
 }

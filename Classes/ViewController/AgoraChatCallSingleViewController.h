@@ -6,19 +6,17 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallBaseViewController.h"
-#import "EaseCallStreamView.h"
-#import "EaseCallManager+Private.h"
+#import "AgoraChatCallBaseViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EaseCallSingleViewController : EaseCallBaseViewController
+@interface AgoraChatCallSingleViewController : AgoraChatCallBaseViewController
 
 @property (nonatomic) BOOL isCaller;
 @property (nonatomic) BOOL isConnected;
 @property (nonatomic, copy) NSString *remoteUserAccount;
 
-- (instancetype)initWithisCaller:(BOOL)aIsCaller type:(EaseCallType)aType  remoteName:(NSString*)aRemoteName;
+- (instancetype)initWithisCaller:(BOOL)aIsCaller type:(AgoraChatCallType)aType  remoteName:(NSString*)aRemoteName;
 - (void)setRemoteMute:(BOOL)aMuted;
 - (void)setRemoteEnableVideo:(BOOL)aEnabled;
 - (void)setLocalDisplayView:(UIView*)aDisplayView enableVideo:(BOOL)aEnableVideo;

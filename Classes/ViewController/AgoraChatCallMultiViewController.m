@@ -6,33 +6,33 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallMultiViewController.h"
-#import "EaseCallStreamView.h"
-#import "EaseCallManager+Private.h"
+#import "AgoraChatCallMultiViewController.h"
+#import "AgoraChatCallStreamView.h"
+#import "AgoraChatCallManager+Private.h"
 #import <Masonry/Masonry.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 #import "UIImage+Ext.h"
-#import "EaseCallLocalizable.h"
-#import "EaseCallStreamViewModel.h"
-#import "EaseCallMultiViewLayout.h"
+#import "AgoraChatCallLocalizable.h"
+#import "AgoraChatCallStreamViewModel.h"
+#import "AgoraChatCallMultiViewLayout.h"
 
-@interface EaseCallMultiViewController () <EaseCallStreamViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
+@interface AgoraChatCallMultiViewController () <AgoraChatCallStreamViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
 
 @property (nonatomic) UIButton *inviteButton;
 @property (nonatomic) BOOL isJoined;
-@property (nonatomic) EaseCallStreamView *miniView;
+@property (nonatomic) AgoraChatCallStreamView *miniView;
 @property (nonatomic, strong) UICollectionView *collectionView;
 
-@property (nonatomic, strong) NSMutableArray<EaseCallStreamViewModel *> *allUserList;
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, EaseCallStreamViewModel *> *joinedUserDictionary;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, EaseCallStreamViewModel *> *unjoinedUserDictionary;
+@property (nonatomic, strong) NSMutableArray<AgoraChatCallStreamViewModel *> *allUserList;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, AgoraChatCallStreamViewModel *> *joinedUserDictionary;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, AgoraChatCallStreamViewModel *> *unjoinedUserDictionary;
 
 @property (nonatomic, strong) dispatch_source_t timer;
 @property (nonatomic, strong) NSMutableDictionary <NSNumber *, NSNumber *>*isTalkingDictionary;
 
 @end
 
-@implementation EaseCallMultiViewController
+@implementation AgoraChatCallMultiViewController
 
 - (instancetype)init
 {
@@ -42,34 +42,34 @@
         _unjoinedUserDictionary = [NSMutableDictionary dictionary];
         _isTalkingDictionary = [NSMutableDictionary dictionary];
         
-        EaseCallStreamViewModel *model = [[EaseCallStreamViewModel alloc] init];
+        AgoraChatCallStreamViewModel *model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = 0;
         model.enableVideo = self.callType == EaseCallTypeMulti;
         model.callType = self.callType;
         model.isMini = NO;
         model.joined = self.inviterId.length <= 0;
         model.showUsername = AgoraChatClient.sharedClient.currentUsername;
-        model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
         [_allUserList addObject:model];
         _joinedUserDictionary[@(0)] = model;
     }
     return self;
 }
 
-- (void)setCallType:(EaseCallType)callType
+- (void)setCallType:(AgoraChatCallType)callType
 {
     [super setCallType:callType];
     
-    for (EaseCallStreamViewModel *model in _allUserList) {
+    for (AgoraChatCallStreamViewModel *model in _allUserList) {
         model.callType = callType;
     }
     [_collectionView reloadData];
     if (callType == EaseCallTypeMulti) {
         _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
         if (_allUserList[0].enableVideo) {
-            [EaseCallManager.sharedManager startPreview];
+            [AgoraChatCallManager.sharedManager startPreview];
         }
-        for (EaseCallStreamView *view in _collectionView.visibleCells) {
+        for (AgoraChatCallStreamView *view in _collectionView.visibleCells) {
             [view update];
         }
     }
@@ -109,7 +109,7 @@
     [self.inviteButton setHidden:YES];
     
     __weak typeof(self)weakSelf = self;
-    EaseCallMultiViewLayout *layout = [[EaseCallMultiViewLayout alloc] init];
+    AgoraChatCallMultiViewLayout *layout = [[AgoraChatCallMultiViewLayout alloc] init];
     layout.isVideo = self.callType == EaseCallTypeMulti;
     layout.getVideoEnableBlock = ^BOOL(NSIndexPath * _Nonnull indexPath) {
         if (weakSelf.allUserList.count <= indexPath.item) {
@@ -121,7 +121,7 @@
     _collectionView.dataSource = self;
     _collectionView.delegate = self;
     _collectionView.backgroundColor = UIColor.clearColor;
-    [_collectionView registerClass:EaseCallStreamView.class forCellWithReuseIdentifier:@"cell"];
+    [_collectionView registerClass:AgoraChatCallStreamView.class forCellWithReuseIdentifier:@"cell"];
     [self.contentView insertSubview:_collectionView atIndex:0];
     [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.centerX.equalTo(self.contentView);
@@ -130,14 +130,14 @@
     }];
     
     if (self.inviterId.length > 0) {
-        NSURL *remoteUrl = [EaseCallManager.sharedManager getHeadImageByUserName:self.inviterId];
-        EaseCallStreamViewModel *localModel = _allUserList.firstObject;
+        NSURL *remoteUrl = [AgoraChatCallManager.sharedManager getHeadImageByUserName:self.inviterId];
+        AgoraChatCallStreamViewModel *localModel = _allUserList.firstObject;
         localModel.showUserHeaderURL = remoteUrl;
-        localModel.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
+        localModel.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.inviterId];
         if (self.callType == EaseCallTypeMulti) {
-            localModel.showStatusText = EaseCallLocalizableString(@"MultiVidioCall",nil);
+            localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiVidioCall",nil);
         } else {
-            localModel.showStatusText = EaseCallLocalizableString(@"MultiAudioCall",nil);
+            localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiAudioCall",nil);
         }
     } else {
         self.isJoined = YES;
@@ -169,17 +169,17 @@
         return;
     }
     BOOL isNew = NO;
-    EaseCallStreamViewModel *model = _unjoinedUserDictionary[uId];
+    AgoraChatCallStreamViewModel *model = _unjoinedUserDictionary[uId];
     if (!model) {
-        model = [[EaseCallStreamViewModel alloc] init];
+        model = [[AgoraChatCallStreamViewModel alloc] init];
         model.callType = self.callType;
         model.uid = uId.integerValue;
         model.isMini = NO;
         model.isTalking = NO;
         model.enableVoice = YES;
-        NSString *userName = [EaseCallManager.sharedManager getUserNameByUid:uId];
-        model.showUserHeaderURL = [EaseCallManager.sharedManager getNicknameByUserName:userName];
-        model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:userName];
+        NSString *userName = [AgoraChatCallManager.sharedManager getUserNameByUid:uId];
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getNicknameByUserName:userName];
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:userName];
         isNew = YES;
     }
     model.enableVideo = aEnableVideo;
@@ -197,7 +197,7 @@
 
 - (void)setRemoteViewNickname:(NSString *)nickname headImage:(NSURL *)url uId:(NSNumber *)uid
 {
-    EaseCallStreamViewModel *model = _joinedUserDictionary[uid];
+    AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uid];
     if (model) {
         model.showUsername = nickname;
         model.showUserHeaderURL = url;
@@ -207,7 +207,7 @@
 
 - (void)removeRemoteViewForUser:(NSNumber *)uId
 {
-    EaseCallStreamViewModel *model = _joinedUserDictionary[uId];
+    AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uId];
     if (model) {
         [_allUserList removeObject:model];
         [_joinedUserDictionary removeObjectForKey:uId];
@@ -217,7 +217,7 @@
 
 - (void)setRemoteMute:(BOOL)muted uid:(NSNumber*)uId
 {
-    EaseCallStreamViewModel *model = _joinedUserDictionary[uId];
+    AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uId];
     if (model) {
         model.enableVoice = !muted;
         [[self streamViewWithUid:uId.integerValue] update];
@@ -226,7 +226,7 @@
 
 - (void)setRemoteEnableVideo:(BOOL)aEnabled uId:(NSNumber*)uId
 {
-    EaseCallStreamViewModel *model = _joinedUserDictionary[uId];
+    AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uId];
     if (model) {
         model.enableVideo = aEnabled;
         for (NSIndexPath *indexPath in _collectionView.indexPathsForVisibleItems) {
@@ -238,9 +238,9 @@
     }
 }
 
-- (EaseCallStreamView *)localView
+- (AgoraChatCallStreamView *)localView
 {
-    for (EaseCallStreamView *view in _collectionView.visibleCells) {
+    for (AgoraChatCallStreamView *view in _collectionView.visibleCells) {
         if (view.model.uid == 0) {
             return view;
         }
@@ -248,9 +248,9 @@
     return nil;
 }
 
-- (EaseCallStreamView *)streamViewWithUid:(NSInteger)uid
+- (AgoraChatCallStreamView *)streamViewWithUid:(NSInteger)uid
 {
-    for (EaseCallStreamView *view in _collectionView.visibleCells) {
+    for (AgoraChatCallStreamView *view in _collectionView.visibleCells) {
         if (view.model.uid == uid) {
             return view;
         }
@@ -331,7 +331,7 @@
 
 - (void)inviteAction
 {
-    [EaseCallManager.sharedManager inviteAction];
+    [AgoraChatCallManager.sharedManager inviteAction];
 }
 
 - (void)answerAction
@@ -346,13 +346,13 @@
 {
     [super muteAction];
     _allUserList[0].enableVoice = !self.microphoneButton.isSelected;
-    EaseCallStreamView *localView = self.localView;
+    AgoraChatCallStreamView *localView = self.localView;
     if (localView) {
         [localView update];
         if (_allUserList[0].enableVoice) {
-            [EaseCallManager.sharedManager muteAudio:NO];
+            [AgoraChatCallManager.sharedManager muteAudio:NO];
         } else {
-            [EaseCallManager.sharedManager muteAudio:YES];
+            [AgoraChatCallManager.sharedManager muteAudio:YES];
         }
     }
 }
@@ -365,13 +365,13 @@
     if (_allUserList.count == 2) {
         [_collectionView reloadData];
     } else {
-        EaseCallStreamView *cell = self.localView;
+        AgoraChatCallStreamView *cell = self.localView;
         if (cell) {
             [cell update];
             if (_allUserList[0].enableVideo) {
-                [EaseCallManager.sharedManager setupLocalVideo:cell.displayView];
+                [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
             } else {
-                [EaseCallManager.sharedManager setupLocalVideo:nil];
+                [AgoraChatCallManager.sharedManager setupLocalVideo:nil];
             }
         }
     }
@@ -379,11 +379,11 @@
 
 - (void)setPlaceHolderUrl:(NSURL*)url member:(NSString *)userName
 {
-    EaseCallStreamViewModel *model = _unjoinedUserDictionary[userName];
+    AgoraChatCallStreamViewModel *model = _unjoinedUserDictionary[userName];
     if (!model) {
-        model = [[EaseCallStreamViewModel alloc] init];
+        model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = -1;
-        model.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:userName];
+        model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:userName];
         model.showUserHeaderURL = url;
         model.callType = self.callType;
         model.joined = NO;
@@ -396,7 +396,7 @@
 
 - (void)removePlaceHolderForMember:(NSString *)userName
 {
-    EaseCallStreamViewModel *model = _unjoinedUserDictionary[userName];
+    AgoraChatCallStreamViewModel *model = _unjoinedUserDictionary[userName];
     if (model) {
         if (model.uid == -1) {
             [_allUserList removeObject:model];
@@ -409,7 +409,7 @@
 - (void)setUser:(NSInteger)userId isTalking:(BOOL)isTalking
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        EaseCallStreamViewModel *model = _joinedUserDictionary[@(userId)];
+        AgoraChatCallStreamViewModel *model = _joinedUserDictionary[@(userId)];
         if (!model) {
             return;
         }
@@ -425,7 +425,7 @@
 
 - (NSArray<NSNumber *> *)getAllUserIds {
     NSMutableArray<NSNumber *> *userIds = [NSMutableArray array];
-    for (EaseCallStreamViewModel *model in _allUserList) {
+    for (AgoraChatCallStreamViewModel *model in _allUserList) {
         [userIds addObject:@(model.uid)];
     }
     return userIds;
@@ -433,7 +433,7 @@
 
 - (void)miniAction
 {
-    EaseCallMultiViewLayout *layout = _collectionView.collectionViewLayout;
+    AgoraChatCallMultiViewLayout *layout = _collectionView.collectionViewLayout;
     if (layout && layout.bigIndex != -1) {
         layout.bigIndex = -1;
         [_collectionView reloadData];
@@ -443,8 +443,8 @@
     self.isMini = YES;
 
     if (!_miniView) {
-        _miniView = [[EaseCallStreamView alloc] init];
-        _miniView.model = [[EaseCallStreamViewModel alloc] init];
+        _miniView = [[AgoraChatCallStreamView alloc] init];
+        _miniView.model = [[AgoraChatCallStreamViewModel alloc] init];
         _miniView.model.isMini = YES;
         _miniView.model.enableVideo = NO;
         _miniView.model.callType = self.callType;
@@ -458,9 +458,9 @@
         _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
     } else {
         if (self.callType == EaseCallTypeMulti) {
-            _miniView.model.showUsername = EaseCallLocalizableString(@"VideoCall",nil);
+            _miniView.model.showUsername = AgoraChatCallLocalizableString(@"VideoCall",nil);
         } else {
-            _miniView.model.showUsername = EaseCallLocalizableString(@"AudioCall",nil);
+            _miniView.model.showUsername = AgoraChatCallLocalizableString(@"AudioCall",nil);
         }
     }
     [_miniView update];
@@ -476,7 +476,7 @@
 
 - (void)updateMiniViewPosition
 {
-    EaseCallMiniViewPosition position;
+    AgoraChatCallMiniViewPosition position;
     UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
     position.isLeft = _miniView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _miniView.frame.origin.y;
@@ -504,14 +504,14 @@
 - (void)usersInfoUpdated
 {
     dispatch_async(dispatch_get_main_queue(), ^{
-        for (EaseCallStreamViewModel *model in _allUserList) {
-            NSString *username = [EaseCallManager.sharedManager getUserNameByUid:@(model.uid)];
+        for (AgoraChatCallStreamViewModel *model in _allUserList) {
+            NSString *username = [AgoraChatCallManager.sharedManager getUserNameByUid:@(model.uid)];
             if (username) {
-                model.showUsername = [EaseCallManager.sharedManager getNicknameByUserName:username];
-                model.showUserHeaderURL = [EaseCallManager.sharedManager getHeadImageByUserName:username];
+                model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
+                model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
             }
         }
-        for (EaseCallStreamView *cell in _collectionView.visibleCells) {
+        for (AgoraChatCallStreamView *cell in _collectionView.visibleCells) {
             [cell update];
         }
     });
@@ -519,12 +519,12 @@
 
 - (void)setupLocalVideo
 {
-    [EaseCallManager.sharedManager setupLocalVideo:self.localView.displayView];
+    [AgoraChatCallManager.sharedManager setupLocalVideo:self.localView.displayView];
 }
 
-- (void)setupRemoteVideoView:(NSUInteger)uid
+- (void)setupRemoteVideoView:(NSUInteger)uid size:(CGSize)size
 {
-    [EaseCallManager.sharedManager setupRemoteVideoView:uid withDisplayView:[self streamViewWithUid:uid].displayView];
+    [AgoraChatCallManager.sharedManager setupRemoteVideoView:uid withDisplayView:[self streamViewWithUid:uid].displayView];
 }
 
 - (void)dealloc
@@ -533,7 +533,7 @@
 }
 
 #pragma mark - EaseCallStreamViewDelegate
-- (void)streamViewDidTap:(EaseCallStreamView *)aVideoView
+- (void)streamViewDidTap:(AgoraChatCallStreamView *)aVideoView
 {
     if (self.isMini) {
         self.isMini = NO;
@@ -555,13 +555,13 @@
         }
     }
     if (bigIndex != -1) {
-        ((EaseCallMultiViewLayout *)self.collectionView.collectionViewLayout).bigIndex = bigIndex;
+        ((AgoraChatCallMultiViewLayout *)self.collectionView.collectionViewLayout).bigIndex = bigIndex;
         [_collectionView reloadData];
         [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"big_mini"] forState:UIControlStateNormal];
     }
 }
 
-- (void)streamView:(EaseCallStreamView *)videoView didPan:(UIPanGestureRecognizer *)panGesture
+- (void)streamView:(AgoraChatCallStreamView *)videoView didPan:(UIPanGestureRecognizer *)panGesture
 {
     CGPoint translation = [panGesture translationInView:panGesture.view];
     CGFloat x = 20;
@@ -585,16 +585,16 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    EaseCallStreamViewModel *model = _allUserList[indexPath.item];
-    EaseCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
+    AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
+    AgoraChatCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     model.isMini = NO;
     if (self.callType == EaseCallTypeMulti) {
         if (model.uid == 0) {
-            [EaseCallManager.sharedManager setupLocalVideo:cell.displayView];
-            model.isMini = _allUserList.count == 2 && ((EaseCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
+            [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
+            model.isMini = _allUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
         } else {
-            [EaseCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
-            [EaseCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:cell.displayView];
+            [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
+            [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:cell.displayView];
         }
     }
     cell.delegate = self;
@@ -617,10 +617,10 @@
         }
     }
     
-    EaseCallStreamViewModel *model = _allUserList[indexPath.item];
+    AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
     
     if (model.uid != 0) {
-        [EaseCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];
+        [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];
     }
 }
 
@@ -628,7 +628,7 @@
 - (NSString *)showAlertTitle
 {
     if (self.inviterId.length > 0) {
-        return [EaseCallManager.sharedManager getNicknameByUserName:self.inviterId];
+        return [AgoraChatCallManager.sharedManager getNicknameByUserName:self.inviterId];
     } else {
         return [super showAlertTitle];
     }

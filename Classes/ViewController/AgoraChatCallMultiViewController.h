@@ -6,12 +6,11 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallBaseViewController.h"
-#import "EaseCallStreamView.h"
+#import "AgoraChatCallBaseViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EaseCallMultiViewController : EaseCallBaseViewController
+@interface AgoraChatCallMultiViewController : AgoraChatCallBaseViewController
 
 - (void)addMember:(NSNumber *)uId enableVideo:(BOOL)aEnableVideo;
 - (void)removeRemoteViewForUser:(NSNumber *)uId;

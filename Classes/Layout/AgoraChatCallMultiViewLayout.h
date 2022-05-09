@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EaseCallMultiViewLayout : UICollectionViewFlowLayout
+@interface AgoraChatCallMultiViewLayout : UICollectionViewFlowLayout
 
 @property (nonatomic, assign) BOOL isVideo;
 @property (nonatomic, assign) NSInteger bigIndex;

@@ -1,5 +1,5 @@
 //
-//  EaseCallManager.h
+//  AgoraChatCallManager.h
 //  EMiOSDemo
 //
 //  Created by lixiaoming on 2020/11/18.
@@ -9,11 +9,11 @@
 @import Foundation;
 @import AgoraRtcKit;
 @import PushKit;
-#import "EaseCallConfig.h"
-#import "EaseCallDefine.h"
-#import "EaseCallError.h"
+#import "AgoraChatCallConfig.h"
+#import "AgoraChatCallDefine.h"
+#import "AgoraChatCallError.h"
 
-@protocol EaseCallDelegate <NSObject>
+@protocol AgoraChatCallDelegate <NSObject>
 /**
  * 通话结束时触发该回调
  * @param aChannelName         通话的通道名称，用于在声网水晶球查询通话质量
@@ -21,26 +21,26 @@
  * @param aTm                             通话时长
  * @param aType    通话类型，EaseCallTypeAudio为语音通话，EaseCallTypeVideo为视频通话，EaseCallTypeMulti为多人通话
  */
-- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(EaseCallEndReason)aReason time:(int)aTm type:(EaseCallType)aType;
+- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoarChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
 /**
  * 多人通话中，点击邀请按钮触发该回调
  * @param vc                          当前通话页面的视图控制器
  * @param users                    当前会议中已存在的成员及已邀请的成员
  * @param aExt                      邀请中的扩展信息
  */
-- (void)multiCallDidInvitingWithCurVC:(UIViewController*_Nonnull)vc callType:(EaseCallType)callType excludeUsers:(NSArray<NSString*> *_Nullable)users ext:(NSDictionary*_Nullable)aExt;
+- (void)multiCallDidInvitingWithCurVC:(UIViewController*_Nonnull)vc callType:(AgoraChatCallType)callType excludeUsers:(NSArray<NSString*> *_Nullable)users ext:(NSDictionary*_Nullable)aExt;
 /**
  * 被叫开始振铃时，触发该回调
  * @param aType         通话类型
  * @param user            主叫的环信Id
  * @param aExt            邀请中的扩展信息
  */
-- (void)callDidReceive:(EaseCallType)aType inviter:(NSString*_Nonnull)user ext:(NSDictionary*_Nullable)aExt;
+- (void)callDidReceive:(AgoraChatCallType)aType inviter:(NSString*_Nonnull)user ext:(NSDictionary*_Nullable)aExt;
 /**
  * 通话过程发生异常时，触发该回调
  * @param aError         错误信息
  */
-- (void)callDidOccurError:(EaseCallError*_Nonnull)aError;
+- (void)callDidOccurError:(AgoraChatCallError*_Nonnull)aError;
 /**
  * 加入音视频通话频道前触发该回调，用户需要在触发该回调后，主动从AppServer获取声网token，然后调用setRTCToken:channelName:方法将token设置进来
  * @param aAppId 声网通话使用的appId
@@ -60,7 +60,7 @@
 
 @end
 
-@interface EaseCallManager : NSObject
+@interface AgoraChatCallManager : NSObject
 
 + (instancetype _Nonnull )alloc __attribute__((unavailable("call sharedManager instead")));
 + (instancetype _Nonnull )new __attribute__((unavailable("call sharedManager instead")));
@@ -73,7 +73,7 @@
  * @param aConfig         EaseCall的配置，包括用户昵称、头像、呼叫超时时间等
  * @param aDelegate    回调监听
  */
-- (void)initWithConfig:(EaseCallConfig*_Nullable)aConfig delegate:(id<EaseCallDelegate>_Nullable)aDelegate;
+- (void)initWithConfig:(AgoraChatCallConfig*_Nullable)aConfig delegate:(id<AgoraChatCallDelegate>_Nullable)aDelegate;
 /**
  * 邀请成员进行单人通话
  * @param uId         被邀请人的环信ID
@@ -81,20 +81,20 @@
  * @param aExt      扩展信息
  * @param aCompletionBlock 完成回调
  */
-- (void)startSingleCallWithUId:(NSString*_Nonnull)uId type:(EaseCallType)aType ext:(NSDictionary* _Nullable)aExt completion:(void (^_Nullable)(NSString* _Nullable callId,EaseCallError* _Nullable aError))aCompletionBlock;
+- (void)startSingleCallWithUId:(NSString*_Nonnull)uId type:(AgoraChatCallType)aType ext:(NSDictionary* _Nullable)aExt completion:(void (^_Nullable)(NSString* _Nullable callId,AgoraChatCallError* _Nullable aError))aCompletionBlock;
 /**
  * 邀请成员进行多人会议
  * @param aUsers         被邀请人的环信ID数组
  * @param aExt              扩展信息，可添加如群组ID等信息
  * @param aCompletionBlock 完成回调
  */
-- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers callType:(EaseCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,EaseCallError*_Nullable aError))aCompletionBlock;
+- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
 
 /**
  * 获取EaseCallKit的配置
  * @return  EaseCallKit的配置
  */
-- (EaseCallConfig*_Nonnull)getEaseCallConfig;
+- (AgoraChatCallConfig*_Nonnull)getAgoraChatCallConfig;
 /**
  * 设置声网频道及token
  * @param aToken         声网token

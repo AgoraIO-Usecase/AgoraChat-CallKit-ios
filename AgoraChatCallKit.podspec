@@ -14,10 +14,10 @@ Pod::Spec.new do |s|
     s.ios.deployment_target = '10.0'
     s.source_files = 'Classes/**/*.{h,m}'
     s.public_header_files = [
-      'Classes/Process/EaseCallManager.h',
-      'Classes/Utils/EaseCallDefine.h',
-      'Classes/Utils/EaseCallError.h',
-      'Classes/Store/EaseCallConfig.h',
+      'Classes/Process/AgoraChatCallManager.h',
+      'Classes/Utils/AgoraChatCallDefine.h',
+      'Classes/Utils/AgoraChatCallError.h',
+      'Classes/Store/AgoraChatCallConfig.h',
       'Classes/AgoraChatCallKit.h',
     ]
     s.static_framework = true

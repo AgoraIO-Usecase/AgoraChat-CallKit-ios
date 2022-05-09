@@ -6,21 +6,21 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallBaseViewController.h"
-#import "EaseCallManager+Private.h"
+#import "AgoraChatCallBaseViewController.h"
+#import "AgoraChatCallManager+Private.h"
 #import <Masonry/Masonry.h>
 #import "UIImage+Ext.h"
-#import "EaseCallLocalizable.h"
+#import "AgoraChatCallLocalizable.h"
 #import "AgoraChatCallIncomingAlertView.h"
 
-@interface EaseCallBaseViewController ()
+@interface AgoraChatCallBaseViewController ()
 
 @property (nonatomic, strong) AgoraChatCallIncomingAlertView *alertView;
 @property (nonatomic, strong) NSTimer *timeTimer;
 
 @end
 
-@implementation EaseCallBaseViewController
+@implementation AgoraChatCallBaseViewController
 
 - (instancetype)init
 {
@@ -36,7 +36,7 @@
     
     [self setubSubViews];
     self.speakerButton.selected = YES;
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(usersInfoUpdated) name:@"EaseCallUserUpdated" object:nil];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(usersInfoUpdated) name:@"AgoraChatCallUserUpdated" object:nil];
 }
 
 - (void)dealloc
@@ -85,7 +85,7 @@
     [self.miniButton setImage:[UIImage agoraChatCallKit_imageNamed:@"mini"] forState:UIControlStateNormal];
     [self.miniButton addTarget:self action:@selector(miniAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.miniButton];
-    [self.miniButton setTintColor:[UIColor whiteColor]];
+    [self.miniButton setTintColor:UIColor.whiteColor];
     [self.miniButton mas_makeConstraints:^(MASConstraintMaker *make) {
         if (@available(iOS 11,*)) {
             make.top.equalTo(self.contentView.mas_safeAreaLayoutGuideTop);
@@ -223,15 +223,15 @@
 
 - (NSString *)showAlertContent
 {
-    NSString *strType = EaseCallLocalizableString(@"voice", nil);
+    NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
     if (_callType == EaseCallTypeMulti) {
-        strType = EaseCallLocalizableString(@"conferenece", nil);
+        strType = AgoraChatCallLocalizableString(@"conferenece", nil);
     } else if (_callType == EaseCallTypeMultiAudio) {
-        strType = EaseCallLocalizableString(@"confereneceAudio", nil);
+        strType = AgoraChatCallLocalizableString(@"confereneceAudio", nil);
     } else if (_callType == EaseCallType1v1Video) {
-        strType = EaseCallLocalizableString(@"video", nil);
+        strType = AgoraChatCallLocalizableString(@"video", nil);
     }
-    return [NSString stringWithFormat: EaseCallLocalizableString(@"inviteInfo", nil), strType];
+    return [NSString stringWithFormat:AgoraChatCallLocalizableString(@"inviteInfo", nil), strType];
 }
 
 - (void)show
@@ -246,7 +246,7 @@
 
 - (void)answerAction
 {
-    [EaseCallManager.sharedManager acceptAction];
+    [AgoraChatCallManager.sharedManager acceptAction];
 }
 
 - (void)hangupAction
@@ -255,31 +255,31 @@
         [_timeTimer invalidate];
         _timeTimer = nil;
     }
-    [EaseCallManager.sharedManager hangupAction];
+    [AgoraChatCallManager.sharedManager hangupAction];
 }
 
 - (void)switchCameraAction
 {
     self.switchCameraButton.selected = !self.switchCameraButton.isSelected;
-    [EaseCallManager.sharedManager switchCameraAction];
+    [AgoraChatCallManager.sharedManager switchCameraAction];
 }
 
 - (void)speakerAction
 {
     self.speakerButton.selected = !self.speakerButton.isSelected;
-    [EaseCallManager.sharedManager speakeOut:self.speakerButton.selected];
+    [AgoraChatCallManager.sharedManager speakeOut:self.speakerButton.selected];
 }
 
 - (void)muteAction
 {
     self.microphoneButton.selected = !self.microphoneButton.isSelected;
-    [EaseCallManager.sharedManager muteAudio:self.microphoneButton.selected];
+    [AgoraChatCallManager.sharedManager muteAudio:self.microphoneButton.selected];
 }
 
 - (void)enableVideoAction
 {
     self.enableCameraButton.selected = !self.enableCameraButton.isSelected;
-    [EaseCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
+    [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
 }
 
 - (void)miniAction

@@ -6,9 +6,9 @@
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#ifndef EaseCallUIKit_h
-#define EaseCallUIKit_h
+#ifndef AgoraChatCallUIKit_h
+#define AgoraChatCallUIKit_h
 
-#import "EaseCallManager.h"
+#import "AgoraChatCallManager.h"
 
-#endif /* EaseCallUIKit_h */
+#endif /* AgoraChatCallUIKit_h */

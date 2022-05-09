@@ -1,23 +1,23 @@
 //
-//  EaseCallManager.m
+//  AgoraChatCallManager.m
 //  EMiOSDemo
 //
 //  Created by lixiaoming on 2020/11/18.
 //  Copyright © 2020 lixiaoming. All rights reserved.
 //
 
-#import "EaseCallManager.h"
-#import "EaseCallSingleViewController.h"
-#import "EaseCallMultiViewController.h"
-#import "EaseCallManager+Private.h"
-#import <AVFoundation/AVFoundation.h>
-#import <AudioToolbox/AudioToolbox.h>
+#import "AgoraChatCallManager.h"
+#import "AgoraChatCallSingleViewController.h"
+#import "AgoraChatCallMultiViewController.h"
+#import "AgoraChatCallManager+Private.h"
 #import <Masonry/Masonry.h>
-#import "EaseCallModal.h"
-#import <CommonCrypto/CommonDigest.h>
-#import "EaseCallLocalizable.h"
+#import "AgoraChatCallModal.h"
+#import "AgoraChatCallLocalizable.h"
 
 @import CallKit;
+@import CommonCrypto;
+@import AudioToolbox;
+@import AVFoundation;
 
 static NSString* kAction = @"action";
 static NSString* kChannelName = @"channelName";
@@ -46,13 +46,13 @@ static NSString* kExt = @"ext";
 #define EMCOMMUNICATE_TYPE_VOICE @"EMCommunicateTypeVoice"
 #define EMCOMMUNICATE_TYPE_VIDEO @"EMCommunicateTypeVideo"
 
-@interface EaseCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,EaseCallModalDelegate, CXProviderDelegate>
+@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate, CXProviderDelegate>
 
-@property (nonatomic,strong) EaseCallConfig* config;
-@property (nonatomic,weak) id<EaseCallDelegate> delegate;
+@property (nonatomic,strong) AgoraChatCallConfig* config;
+@property (nonatomic,weak) id<AgoraChatCallDelegate> delegate;
 @property (nonatomic) dispatch_queue_t workQueue;
 @property (nonatomic,strong) AVAudioPlayer* audioPlayer;
-@property (nonatomic,strong) EaseCallModal* modal;
+@property (nonatomic,strong) AgoraChatCallModal* modal;
 // 定义 agoraKit 变量
 @property (strong, nonatomic) AgoraRtcEngineKit *agoraKit;
 // 呼叫方Timer
@@ -61,7 +61,7 @@ static NSString* kExt = @"ext";
 @property (nonatomic,strong) NSMutableDictionary* alertTimerDic;
 @property (nonatomic,weak) NSTimer* confirmTimer;
 @property (nonatomic,weak) NSTimer* ringTimer;
-@property (nonatomic,strong) EaseCallBaseViewController *callVC;
+@property (nonatomic,strong) AgoraChatCallBaseViewController *callVC;
 @property (nonatomic) BOOL bNeedSwitchToVoice;
 
 
@@ -70,31 +70,30 @@ static NSString* kExt = @"ext";
 
 @end
 
-@implementation EaseCallManager
-static EaseCallManager *easeCallManager = nil;
+@implementation AgoraChatCallManager
+static AgoraChatCallManager *agoraChatCallManager = nil;
 
 + (instancetype)sharedManager
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        //[[EMClient sharedClient] log:@"-------[EaseCallManager] init-------"];
-        easeCallManager = [[EaseCallManager alloc] init];
-        easeCallManager.delegate = nil;
-        [AgoraChatClient.sharedClient.chatManager addDelegate:easeCallManager delegateQueue:nil];
-        easeCallManager.modal = [[EaseCallModal alloc] initWithDelegate:easeCallManager];
-        easeCallManager.agoraKit = nil;
+        agoraChatCallManager = [[AgoraChatCallManager alloc] init];
+        agoraChatCallManager.delegate = nil;
+        [AgoraChatClient.sharedClient.chatManager addDelegate:agoraChatCallManager delegateQueue:nil];
+        agoraChatCallManager.modal = [[AgoraChatCallModal alloc] initWithDelegate:agoraChatCallManager];
+        agoraChatCallManager.agoraKit = nil;
     });
-    return easeCallManager;
+    return agoraChatCallManager;
 }
 
-- (void)initWithConfig:(EaseCallConfig*)aConfig delegate:(id<EaseCallDelegate>)aDelegate
+- (void)initWithConfig:(AgoraChatCallConfig*)aConfig delegate:(id<AgoraChatCallDelegate>)aDelegate
 {
     self.delegate= aDelegate;
-    _workQueue = dispatch_queue_create("EaseCallManager.WorkQ", DISPATCH_QUEUE_SERIAL);
+    _workQueue = dispatch_queue_create("AgoraChatCallManager.WorkQ", DISPATCH_QUEUE_SERIAL);
     if (aConfig) {
         self.config = aConfig;
     } else {
-        self.config = [[EaseCallConfig alloc] init];
+        self.config = [[AgoraChatCallConfig alloc] init];
     }
     if (!self.agoraKit) {
         self.agoraKit = [AgoraRtcEngineKit sharedEngineWithAppId:self.config.agoraAppId delegate:self];
@@ -106,7 +105,7 @@ static EaseCallManager *easeCallManager = nil;
     self.modal.curUserAccount = AgoraChatClient.sharedClient.currentUsername;
 }
 
-- (EaseCallConfig*)getEaseCallConfig
+- (AgoraChatCallConfig*)getAgoraChatCallConfig
 {
     return self.config;
 }
@@ -159,14 +158,14 @@ static EaseCallManager *easeCallManager = nil;
     return _alertTimerDic;
 }
 
-- (void)startInviteUsers:(NSArray<NSString *> *)aUsers callType:(EaseCallType)callType ext:(NSDictionary *)aExt completion:(void(^)(NSString *callId, EaseCallError *))aCompletionBlock {
+- (void)startInviteUsers:(NSArray<NSString *> *)aUsers callType:(AgoraChatCallType)callType ext:(NSDictionary *)aExt completion:(void(^)(NSString *callId, AgoraChatCallError *))aCompletionBlock {
     if (aUsers.count == 0) {
         NSLog(@"InviteUsers faild!!remoteUid is empty");
         if (aCompletionBlock) {
-            EaseCallError* error = [EaseCallError errorWithType:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
+            AgoraChatCallError* error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
             aCompletionBlock(nil,error);
         } else {
-            [self callBackError:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
+            [self callBackError:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
         }
         return;
     }
@@ -188,12 +187,12 @@ static EaseCallManager *easeCallManager = nil;
                 }
             }
         } else {
-            weakself.modal.currentCall = [[ECCall alloc] init];
+            weakself.modal.currentCall = [[AgoraChatCall alloc] init];
             weakself.modal.currentCall.channelName = [[NSUUID UUID] UUIDString];
             weakself.modal.currentCall.callType = callType;
             weakself.modal.currentCall.callId = [[NSUUID UUID] UUIDString];
             weakself.modal.currentCall.isCaller = YES;
-            weakself.modal.state = EaseCallState_Answering;
+            weakself.modal.state = AgoraChatCallState_Answering;
             weakself.modal.currentCall.ext = aExt;
             dispatch_async(dispatch_get_main_queue(), ^{
                 for (NSString *uId in aUsers) {
@@ -209,36 +208,36 @@ static EaseCallManager *easeCallManager = nil;
     });
 }
 
-- (void)startSingleCallWithUId:(NSString*)uId type:(EaseCallType)aType ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,EaseCallError*))aCompletionBlock {
+- (void)startSingleCallWithUId:(NSString*)uId type:(AgoraChatCallType)aType ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,AgoraChatCallError*))aCompletionBlock {
     if (uId.length <= 0) {
         NSLog(@"makeCall faild!!remoteUid is empty");
         if (aCompletionBlock) {
-            EaseCallError *error = [EaseCallError errorWithType:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
+            AgoraChatCallError *error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
             aCompletionBlock(nil,error);
         } else {
-            [self callBackError:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
+            [self callBackError:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
         }
         return;
     }
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
-        EaseCallError * error = nil;
+        AgoraChatCallError * error = nil;
         if ([self isBusy]) {
             NSLog(@"makeCall faild!!current is busy");
             if (aCompletionBlock) {
-                error = [EaseCallError errorWithType:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeBusy description:@"current is busy "];
+                error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeBusy description:@"current is busy "];
                 aCompletionBlock(nil,error);
             } else {
-                [self callBackError:EaseCallErrorTypeProcess code:EaseCallProcessErrorCodeBusy description:@"current is busy"];
+                [self callBackError:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeBusy description:@"current is busy"];
             }
         } else {
-            weakself.modal.currentCall = [[ECCall alloc] init];
+            weakself.modal.currentCall = [[AgoraChatCall alloc] init];
             weakself.modal.currentCall.channelName = [[NSUUID UUID] UUIDString];
             weakself.modal.currentCall.remoteUserAccount = uId;
-            weakself.modal.currentCall.callType = (EaseCallType)aType;
+            weakself.modal.currentCall.callType = (AgoraChatCallType)aType;
             weakself.modal.currentCall.callId = [[NSUUID UUID] UUIDString];
             weakself.modal.currentCall.isCaller = YES;
-            weakself.modal.state = EaseCallState_Outgoing;
+            weakself.modal.state = AgoraChatCallState_Outgoing;
             weakself.modal.currentCall.ext = aExt;
             dispatch_async(dispatch_get_main_queue(), ^{
                 [weakself sendInviteMsgToCallee:uId type:weakself.modal.currentCall.callType callId:weakself.modal.currentCall.callId channelName:weakself.modal.currentCall.channelName ext:aExt completion:aCompletionBlock];
@@ -253,7 +252,7 @@ static EaseCallManager *easeCallManager = nil;
 // 是否处于忙碌状态
 - (BOOL)isBusy
 {
-    return self.modal.currentCall && (self.modal.state != EaseCallState_Idle && self.modal.state != EaseCallState_Refuse);
+    return self.modal.currentCall && (self.modal.state != AgoraChatCallState_Idle && self.modal.state != AgoraChatCallState_Refuse);
 }
 
 - (void)clearRes
@@ -337,10 +336,10 @@ static EaseCallManager *easeCallManager = nil;
     
     if (!self.callVC) {
         if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
-            self.callVC = [[EaseCallMultiViewController alloc] init];
+            self.callVC = [[AgoraChatCallMultiViewController alloc] init];
         } else {
-            self.callVC = [[EaseCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
-            ((EaseCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
+            self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
+            ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
         }
         self.callVC.callType = self.modal.currentCall.callType;
         
@@ -367,7 +366,7 @@ static EaseCallManager *easeCallManager = nil;
     }
     
     if ((self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) && self.modal.currentCall.isCaller) {
-        self.callVC = [[EaseCallMultiViewController alloc] init];
+        self.callVC = [[AgoraChatCallMultiViewController alloc] init];
         self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
         self.callVC.callType = self.modal.currentCall.callType;
         UIWindow* keyWindow = [self getKeyWindow];
@@ -396,11 +395,11 @@ static EaseCallManager *easeCallManager = nil;
     }
     [self playSound];
     if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
-        self.callVC = [[EaseCallMultiViewController alloc] init];
+        self.callVC = [[AgoraChatCallMultiViewController alloc] init];
         [self getMultiVC].inviterId = self.modal.currentCall.remoteUserAccount;
     } else {
-        self.callVC = [[EaseCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
-        ((EaseCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
+        self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
+        ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
     }
     self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
     self.callVC.callType = self.modal.currentCall.callType;
@@ -416,25 +415,25 @@ static EaseCallManager *easeCallManager = nil;
     [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
 }
 
-- (EaseCallSingleViewController*)getSingleVC
+- (AgoraChatCallSingleViewController*)getSingleVC
 {
-    return (EaseCallSingleViewController*)self.callVC;
+    return (AgoraChatCallSingleViewController*)self.callVC;
 }
 
-- (EaseCallMultiViewController*)getMultiVC
+- (AgoraChatCallMultiViewController*)getMultiVC
 {
-    return (EaseCallMultiViewController*)self.callVC;
+    return (AgoraChatCallMultiViewController*)self.callVC;
 }
 
-#pragma mark - EaseCallModalDelegate
-- (void)callStateWillChangeTo:(EaseCallState)newState from:(EaseCallState)preState
+#pragma mark - AgoraChatCallModalDelegate
+- (void)callStateWillChangeTo:(AgoraChatCallState)newState from:(AgoraChatCallState)preState
 {
     NSLog(@"callState will chageto:%ld from:%ld",newState,(long)preState);
     dispatch_async(dispatch_get_main_queue(), ^{
         self.callVC.callState = self.modal.state;
         switch (newState) {
-            case EaseCallState_Idle:
-                if (preState == EaseCallState_Answering && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
+            case AgoraChatCallState_Idle:
+                if (preState == AgoraChatCallState_Answering && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
                     NSString *callId = self.modal.currentCall.callId;
                     NSString *uid = self.modal.currentCall.remoteUserAccount;
                     NSDictionary *ext = @{
@@ -455,17 +454,17 @@ static EaseCallManager *easeCallManager = nil;
                 }
                 [self clearRes];
                 break;
-            case EaseCallState_Outgoing:
+            case AgoraChatCallState_Outgoing:
                 [self refreshUIOutgoing];
                 break;
-            case EaseCallState_Alerting:
+            case AgoraChatCallState_Alerting:
                 [self refreshUIAlerting];
                 break;
-            case EaseCallState_Answering:
+            case AgoraChatCallState_Answering:
                 [self refreshUIAnswering];
                 break;
-            case EaseCallState_Refuse:
-                if (self.modal.state == EaseCallState_Refuse && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
+            case AgoraChatCallState_Refuse:
+                if (self.modal.state == AgoraChatCallState_Refuse && (self.modal.currentCall.callType == EaseCallType1v1Audio || self.modal.currentCall.callType == EaseCallType1v1Video)) {
                     
                     self.modal.currentCall = nil;
                     
@@ -522,20 +521,20 @@ static EaseCallManager *easeCallManager = nil;
 #pragma mark - sendMessage
 
 //发送呼叫邀请消息
-- (void)sendInviteMsgToCallee:(NSString*)aUid type:(EaseCallType)aType callId:(NSString*)aCallId channelName:(NSString*)aChannelName ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,EaseCallError*))aCompletionBlock
+- (void)sendInviteMsgToCallee:(NSString*)aUid type:(AgoraChatCallType)aType callId:(NSString*)aCallId channelName:(NSString*)aChannelName ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,AgoraChatCallError*))aCompletionBlock
 {
     if (aUid.length == 0 || aCallId.length == 0 || aChannelName.length == 0) {
         return;
     }
-    NSString *strType = EaseCallLocalizableString(@"voice", nil);
+    NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
     if (aType == EaseCallTypeMulti) {
-        strType = EaseCallLocalizableString(@"conferenece", nil);
+        strType = AgoraChatCallLocalizableString(@"conferenece", nil);
     } else if (aType == EaseCallTypeMultiAudio) {
-        strType = EaseCallLocalizableString(@"confereneceAudio", nil);
+        strType = AgoraChatCallLocalizableString(@"confereneceAudio", nil);
     } else if (aType == EaseCallType1v1Video) {
-        strType = EaseCallLocalizableString(@"video", nil);
+        strType = AgoraChatCallLocalizableString(@"video", nil);
     }
-    AgoraChatTextMessageBody *msgBody = [[AgoraChatTextMessageBody alloc] initWithText:[NSString stringWithFormat: EaseCallLocalizableString(@"inviteInfo", nil), strType]];
+    AgoraChatTextMessageBody *msgBody = [[AgoraChatTextMessageBody alloc] initWithText:[NSString stringWithFormat: AgoraChatCallLocalizableString(@"inviteInfo", nil), strType]];
     NSMutableDictionary *ext = [@{
         kMsgType:kMsgTypeValue,
         kAction:kInviteAction,
@@ -555,7 +554,7 @@ static EaseCallManager *easeCallManager = nil;
             aCompletionBlock(weakself.modal.currentCall.callId,nil);
         }
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
 }
@@ -580,7 +579,7 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
 }
@@ -606,7 +605,7 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
 }
@@ -629,7 +628,7 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if(error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
 }
@@ -658,7 +657,7 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
     [self _startConfirmTimer:aCallId];
@@ -684,11 +683,11 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
     if ([aResult isEqualToString:kAcceptResult]) {
-        self.modal.state = EaseCallState_Answering;
+        self.modal.state = AgoraChatCallState_Answering;
     }
 }
 
@@ -709,7 +708,7 @@ static EaseCallManager *easeCallManager = nil;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
-            [weakself callBackError:EaseCallErrorTypeIM code:error.code description:error.errorDescription];
+            [weakself callBackError:AgoarChatCallErrorTypeIM code:error.code description:error.errorDescription];
         }
     }];
 }
@@ -757,10 +756,10 @@ static EaseCallManager *easeCallManager = nil;
         if ([weakself isBusy]) {
             [weakself sendAnswerMsg:from callId:callId result:kBusyResult devId:callerDevId];
         } else {
-            ECCall *call = [[ECCall alloc] init];
+            AgoraChatCall *call = [[AgoraChatCall alloc] init];
             call.callId = callId;
             call.isCaller = NO;
-            call.callType = (EaseCallType)[callType intValue];
+            call.callType = (AgoraChatCallType)[callType intValue];
             call.remoteCallDevId = callerDevId;
             call.channelName = channelname;
             call.remoteUserAccount = from;
@@ -787,8 +786,8 @@ static EaseCallManager *easeCallManager = nil;
         if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && !weakself.modal.hasJoinedChannel) {
             [weakself _stopConfirmTimer:callId];
             [weakself _stopAlertTimer:callId];
-            [weakself callBackCallEnd:EaseCallEndReasonRemoteCancel];
-            weakself.modal.state = EaseCallState_Idle;
+            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteCancel];
+            weakself.modal.state = AgoraChatCallState_Idle;
             [weakself stopSound];
         } else {
             [weakself.modal.recvCalls removeObjectForKey:callId];
@@ -813,23 +812,23 @@ static EaseCallManager *easeCallManager = nil;
                     [self.callTimerDic removeObjectForKey:from];
                 }
             } else {
-                if (weakself.modal.state == EaseCallState_Outgoing) {
+                if (weakself.modal.state == AgoraChatCallState_Outgoing) {
                     if ([result isEqualToString:kAcceptResult]) {
                         if (isVideoToVoice && isVideoToVoice.boolValue) {
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [weakself switchToVoice];
                             });
                         }
-                        weakself.modal.state = EaseCallState_Answering;
+                        weakself.modal.state = AgoraChatCallState_Answering;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
-                            [weakself callBackCallEnd:EaseCallEndReasonRefuse];
-                            weakself.modal.state = EaseCallState_Refuse;
+                            [weakself callBackCallEnd:AgoarChatCallEndReasonRefuse];
+                            weakself.modal.state = AgoraChatCallState_Refuse;
                         } else if ([result isEqualToString:kBusyResult]) {
-                            [weakself callBackCallEnd:EaseCallEndReasonBusy];
-                            weakself.modal.state = EaseCallState_Idle;
+                            [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
+                            weakself.modal.state = AgoraChatCallState_Idle;
                         } else {
-                            weakself.modal.state = EaseCallState_Idle;
+                            weakself.modal.state = AgoraChatCallState_Idle;
                         }
                     }
                     [weakself sendConfirmAnswerMsgToCallee:from callId:callId result:result devId:calleeDevId];
@@ -845,25 +844,25 @@ static EaseCallManager *easeCallManager = nil;
                 [weakself sendAnswerMsg:from callId:callId result:kBusyResult devId:callerDevId];
                 return;
             }
-            ECCall *call = [weakself.modal.recvCalls objectForKey:callId];
+            AgoraChatCall *call = [weakself.modal.recvCalls objectForKey:callId];
             if (call) {
                 if ([isValid boolValue]) {
                     weakself.modal.currentCall = call;
                     [weakself.modal.recvCalls removeAllObjects];
                     [weakself _stopAllAlertTimer];
-                    weakself.modal.state = EaseCallState_Alerting;
+                    weakself.modal.state = AgoraChatCallState_Alerting;
                 }
                 [weakself.modal.recvCalls removeObjectForKey:callId];
             }
         }
     };
     void (^parseConfirmCalleeMsgExt)(NSDictionary *) = ^void (NSDictionary *ext) {
-        if (weakself.modal.state == EaseCallState_Alerting && [weakself.modal.currentCall.callId isEqualToString:callId]) {
+        if (weakself.modal.state == AgoraChatCallState_Alerting && [weakself.modal.currentCall.callId isEqualToString:callId]) {
             [weakself _stopConfirmTimer:callId];
             if ([weakself.modal.curDevId isEqualToString:calleeDevId]) {
                 // 仲裁为自己
                 if ([result isEqualToString:kAcceptResult]) {
-                    weakself.modal.state = EaseCallState_Answering;
+                    weakself.modal.state = AgoraChatCallState_Answering;
                     dispatch_async(dispatch_get_main_queue(), ^{
                         if (weakself.modal.currentCall.callType != EaseCallType1v1Audio && weakself.modal.currentCall.callType != EaseCallTypeMultiAudio) {
                             [weakself.callVC setupLocalVideo];
@@ -873,8 +872,8 @@ static EaseCallManager *easeCallManager = nil;
                 }
             } else {
                 // 已在其他端处理
-                [weakself callBackCallEnd:EaseCallEndReasonHandleOnOtherDevice];
-                weakself.modal.state = EaseCallState_Idle;
+                [weakself callBackCallEnd:AgoarChatCallEndReasonHandleOnOtherDevice];
+                weakself.modal.state = AgoraChatCallState_Idle;
                 [weakself stopSound];
             }
         } else {
@@ -944,8 +943,8 @@ static EaseCallManager *easeCallManager = nil;
     [self.callTimerDic removeObjectForKey:aRemoteUser];
     [self sendCancelCallMsgToCallee:aRemoteUser callId:self.modal.currentCall.callId];
     if (self.modal.currentCall.callType != EaseCallTypeMulti && self.modal.currentCall.callType != EaseCallTypeMultiAudio) {
-        [self callBackCallEnd:EaseCallEndReasonRemoteNoResponse];
-        self.modal.state = EaseCallState_Idle;
+        [self callBackCallEnd:AgoarChatCallEndReasonRemoteNoResponse];
+        self.modal.state = AgoraChatCallState_Idle;
     } else {
         __weak typeof(self) weakself = self;
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -1024,8 +1023,8 @@ static EaseCallManager *easeCallManager = nil;
     NSString *callId = (NSString*)[tm userInfo];
     NSLog(@"_timeoutConfirm,callId:%@",callId);
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
-        [self callBackCallEnd:EaseCallEndReasonRemoteNoResponse];
-        self.modal.state = EaseCallState_Idle;
+        [self callBackCallEnd:AgoarChatCallEndReasonRemoteNoResponse];
+        self.modal.state = AgoraChatCallState_Idle;
     }
 }
 
@@ -1057,8 +1056,8 @@ static EaseCallManager *easeCallManager = nil;
     NSLog(@"_timeoutConfirm,callId:%@",callId);
     [self stopSound];
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
-        [self callBackCallEnd:EaseCallEndReasonNoResponse];
-        self.modal.state = EaseCallState_Idle;
+        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
+        self.modal.state = AgoraChatCallState_Idle;
     }
 }
 
@@ -1099,11 +1098,11 @@ static EaseCallManager *easeCallManager = nil;
 {
     NSLog(@"rtcEngine didOccurError:%ld",(long)errorCode);
     if (errorCode == AgoraErrorCodeTokenExpired || errorCode == AgoraErrorCodeInvalidToken) {
-        self.modal.state = EaseCallState_Idle;
-        [self callBackError:EaseCallErrorTypeRTC code:errorCode description:@"RTC Error"];
+        self.modal.state = AgoraChatCallState_Idle;
+        [self callBackError:AgoarChatCallErrorTypeRTC code:errorCode description:@"RTC Error"];
     } else {
         if (errorCode != AgoraErrorCodeNoError && errorCode != AgoraErrorCodeLeaveChannelRejected) {
-            [self callBackError:EaseCallErrorTypeRTC code:errorCode description:@"RTC Error"];
+            [self callBackError:AgoarChatCallErrorTypeRTC code:errorCode description:@"RTC Error"];
         }
     }
 }
@@ -1146,8 +1145,8 @@ static EaseCallManager *easeCallManager = nil;
         [[self getMultiVC] removeRemoteViewForUser:@(uid)];
         [self.modal.currentCall.allUserAccounts removeObjectForKey:@(uid)];
     } else {
-        [self callBackCallEnd:EaseCallEndReasonHangup];
-        self.modal.state = EaseCallState_Idle;
+        [self callBackCallEnd:AgoarChatCallEndReasonHangup];
+        self.modal.state = AgoraChatCallState_Idle;
     }
 }
 
@@ -1199,7 +1198,7 @@ static EaseCallManager *easeCallManager = nil;
 // 对方发视频流
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteVideoDecodedOfUid:(NSUInteger)uid size:(CGSize)size elapsed:(NSInteger)elapsed
 {
-    [self.callVC setupRemoteVideoView:uid];
+    [self.callVC setupRemoteVideoView:uid size:size];
     //[[EMClient sharedClient] log:[NSString stringWithFormat:@"firstRemoteVideoDecodedOfUid:%lu",uid]];
 }
 
@@ -1236,7 +1235,7 @@ static EaseCallManager *easeCallManager = nil;
 
 #pragma mark - 提供delegate
 
-- (void)callBackCallEnd:(EaseCallEndReason)reason
+- (void)callBackCallEnd:(AgoarChatCallEndReason)reason
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -1246,12 +1245,12 @@ static EaseCallManager *easeCallManager = nil;
     });
 }
 
-- (void)callBackError:(EaseCallErrorType)aErrorType code:(NSInteger)aCode description:(NSString*)aDescription
+- (void)callBackError:(AgoarChatCallErrorType)aErrorType code:(NSInteger)aCode description:(NSString*)aDescription
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         if (weakself.delegate && [weakself.delegate respondsToSelector:@selector(callDidOccurError:)]) {
-            EaseCallError* error = [EaseCallError errorWithType:aErrorType code:aCode description:aDescription];
+            AgoraChatCallError* error = [AgoraChatCallError errorWithType:aErrorType code:aCode description:aDescription];
             [weakself.delegate callDidOccurError:error];
         }
     });
@@ -1298,12 +1297,12 @@ static EaseCallManager *easeCallManager = nil;
 @end
 
 
-@implementation EaseCallManager (Private)
+@implementation AgoraChatCallManager (Private)
 
 - (void)hangupAction
 {
     NSLog(@"hangupAction,curState:%ld",(long)self.modal.state);
-    if (self.modal.state == EaseCallState_Answering) {
+    if (self.modal.state == AgoraChatCallState_Answering) {
         // 正常挂断
         if (self.modal.currentCall.callType == EaseCallTypeMulti || self.modal.currentCall.callType == EaseCallTypeMultiAudio) {
             if (self.callTimerDic.count > 0) {
@@ -1315,20 +1314,20 @@ static EaseCallManager *easeCallManager = nil;
             }
         }
         
-        [self callBackCallEnd:EaseCallEndReasonHangup];
-        self.modal.state = EaseCallState_Idle;
-    } else if (self.modal.state == EaseCallState_Outgoing) {
+        [self callBackCallEnd:AgoarChatCallEndReasonHangup];
+        self.modal.state = AgoraChatCallState_Idle;
+    } else if (self.modal.state == AgoraChatCallState_Outgoing) {
         // 取消呼叫
         [self _stopCallTimer:self.modal.currentCall.remoteUserAccount];
         [self sendCancelCallMsgToCallee:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId];
-        [self callBackCallEnd:EaseCallEndReasonCancel];
-        self.modal.state = EaseCallState_Idle;
-    } else if (self.modal.state == EaseCallState_Alerting) {
+        [self callBackCallEnd:AgoarChatCallEndReasonCancel];
+        self.modal.state = AgoraChatCallState_Idle;
+    } else if (self.modal.state == AgoraChatCallState_Alerting) {
         // 拒绝
         [self stopSound];
         [self sendAnswerMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId result:kRefuseresult devId:self.modal.currentCall.remoteCallDevId];
-        [self callBackCallEnd:EaseCallEndReasonRefuse];
-        self.modal.state = EaseCallState_Idle;
+        [self callBackCallEnd:AgoarChatCallEndReasonRefuse];
+        self.modal.state = AgoraChatCallState_Idle;
     }
 }
 
@@ -1373,7 +1372,7 @@ static EaseCallManager *easeCallManager = nil;
 - (NSString *)getNicknameByUserName:(NSString*)aUserName
 {
     if (aUserName.length > 0) {
-        EaseCallUser *user = [self.config.users objectForKey:aUserName];
+        AgoraChatCallUser *user = [self.config.users objectForKey:aUserName];
         if (user && user.nickName.length > 0) {
             return user.nickName;
         }
@@ -1383,7 +1382,7 @@ static EaseCallManager *easeCallManager = nil;
 - (NSURL *)getHeadImageByUserName:(NSString *)aUserName
 {
     if ([aUserName length] > 0) {
-        EaseCallUser *user = [self.config.users objectForKey:aUserName];
+        AgoraChatCallUser *user = [self.config.users objectForKey:aUserName];
         if (user && user.headImage.absoluteString.length > 0) {
             return user.headImage;
         }
@@ -1406,7 +1405,7 @@ static EaseCallManager *easeCallManager = nil;
 {
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
     canvas.uid = uid;
-    canvas.renderMode = AgoraVideoRenderModeHidden;
+    canvas.renderMode = AgoraVideoRenderModeFit;
     canvas.view = view;
     [self.agoraKit setupRemoteVideo:canvas];
 }
@@ -1424,7 +1423,7 @@ static EaseCallManager *easeCallManager = nil;
     [self setupVideo];
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
     canvas.uid = 0;
-    canvas.renderMode = AgoraVideoRenderModeHidden;
+    canvas.renderMode = AgoraVideoRenderModeFit;
     canvas.view = displayView;
     [self.agoraKit setupLocalVideo:canvas];
     if (displayView) {
@@ -1466,7 +1465,7 @@ static EaseCallManager *easeCallManager = nil;
 
 @end
 
-@implementation EaseCallManager (CallKit)
+@implementation AgoraChatCallManager (CallKit)
 
 - (void)reportIncomingCallWithTitle:(NSString *)title Sid:(NSString *)sid
 {

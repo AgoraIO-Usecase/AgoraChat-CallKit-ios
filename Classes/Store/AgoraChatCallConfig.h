@@ -1,5 +1,5 @@
 //
-//  EaseCallConfig.h
+//  AgoraChatCallConfig.h
 //  EMiOSDemo
 //
 //  Created by lixiaoming on 2020/12/9.
@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * 用户的昵称、头像信息
  */
-@interface EaseCallUser : NSObject
+@interface AgoraChatCallUser : NSObject
 /*
  * nickName    用户昵称
  */
@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 // 增加铃声、标题文本、环信ID与昵称的映射
-@interface EaseCallConfig : NSObject
+@interface AgoraChatCallConfig : NSObject
 
 /*
  * callTimeOut    呼叫超时时间
@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 /*
  * users    用户信息字典,key为环信ID，value为EaseCallUser
  */
-@property (nonatomic,strong) NSMutableDictionary<NSString*,EaseCallUser*>* users;
+@property (nonatomic,strong) NSMutableDictionary<NSString*,AgoraChatCallUser*>* users;
 /*
  * ringFileUrl    振铃文件
  */
@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) AgoraVideoEncoderConfiguration *encoderConfiguration;
 @property (nonatomic) NSUInteger agoraUid;
 
-- (void)setUser:(NSString*)aUser info:(EaseCallUser*)aInfo;
+- (void)setUser:(NSString*)aUser info:(AgoraChatCallUser*)aInfo;
 
 @end
 

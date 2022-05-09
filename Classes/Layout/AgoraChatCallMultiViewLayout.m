@@ -5,9 +5,9 @@
 //  Created by 冯钊 on 2022/4/24.
 //
 
-#import "EaseCallMultiViewLayout.h"
+#import "AgoraChatCallMultiViewLayout.h"
 
-@interface EaseCallMultiViewLayout ()
+@interface AgoraChatCallMultiViewLayout ()
 
 @property (nonatomic, strong) NSMutableDictionary *layoutDictionary;
 @property (nonatomic, assign) NSInteger allCount;
@@ -16,7 +16,7 @@
 
 @end
 
-@implementation EaseCallMultiViewLayout
+@implementation AgoraChatCallMultiViewLayout
 
 - (instancetype)init
 {

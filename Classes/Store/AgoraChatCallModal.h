@@ -7,28 +7,28 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "EaseCallDefine.h"
+#import "AgoraChatCallDefine.h"
 #import <AgoraRtcKit/AgoraRtcEngineKit.h>
 
-typedef NS_ENUM(NSInteger, EaseCallState) {
-    EaseCallState_Idle,
-    EaseCallState_Outgoing,
-    EaseCallState_Alerting,
-    EaseCallState_Answering,
-    EaseCallState_Refuse,
+typedef NS_ENUM(NSInteger, AgoraChatCallState) {
+    AgoraChatCallState_Idle,
+    AgoraChatCallState_Outgoing,
+    AgoraChatCallState_Alerting,
+    AgoraChatCallState_Answering,
+    AgoraChatCallState_Refuse,
 };
 
-@protocol EaseCallModalDelegate <NSObject>
+@protocol AgoraChatCallModalDelegate <NSObject>
 
 // 通话状态改变
-- (void)callStateWillChangeTo:(EaseCallState)newState from:(EaseCallState)preState;
+- (void)callStateWillChangeTo:(AgoraChatCallState)newState from:(AgoraChatCallState)preState;
 
 @end
 
 NS_ASSUME_NONNULL_BEGIN
 
 // 加入频道时，使用joinChannlewithAccount接口，account为自己的环信账户
-@interface ECCall : NSObject
+@interface AgoraChatCall : NSObject
 // 通话的callId，一次通话的唯一标识符
 @property (nonatomic,strong) NSString* callId;
 // 通话的对端账户环信Id
@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 // 通话的对端账户设备ID
 @property (nonatomic,strong) NSString* remoteCallDevId;
 // 通话类型
-@property (nonatomic) EaseCallType callType;
+@property (nonatomic) AgoraChatCallType callType;
 // 是否主叫方
 @property (nonatomic) BOOL isCaller;
 // 自己在频道中的声网ID
@@ -49,9 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) NSDictionary* ext;
 @end
 
-@interface EaseCallModal : NSObject
+@interface AgoraChatCallModal : NSObject
 // 当前正在进行的通话
-@property (nonatomic,strong) ECCall* __nullable currentCall;
+@property (nonatomic,strong) AgoraChatCall* __nullable currentCall;
 // 当前收到的通话请求
 @property (nonatomic,strong) NSMutableDictionary* recvCalls;
 // 本地设备ID
@@ -61,13 +61,13 @@ NS_ASSUME_NONNULL_BEGIN
 // 声网RTC的token
 @property (nonatomic,strong) NSString* agoraRTCToken;
 // 通话的呼叫状态
-@property (nonatomic) EaseCallState state;
+@property (nonatomic) AgoraChatCallState state;
 // 自己是否加入频道成功
 @property (nonatomic) BOOL hasJoinedChannel;
 // 使用的声网uid
 @property (nonatomic) NSInteger agoraUid;
 
-- (instancetype)initWithDelegate:(id<EaseCallModalDelegate>)delegate;
+- (instancetype)initWithDelegate:(id<AgoraChatCallModalDelegate>)delegate;
 
 @end
 
