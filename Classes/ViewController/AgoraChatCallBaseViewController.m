@@ -224,7 +224,7 @@
 - (NSString *)showAlertContent
 {
     NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
-    if (_callType == EaseCallTypeMulti) {
+    if (_callType == EaseCallTypeMultiVideo) {
         strType = AgoraChatCallLocalizableString(@"conferenece", nil);
     } else if (_callType == EaseCallTypeMultiAudio) {
         strType = AgoraChatCallLocalizableString(@"confereneceAudio", nil);

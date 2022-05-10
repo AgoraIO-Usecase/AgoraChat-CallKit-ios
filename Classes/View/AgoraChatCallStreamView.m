@@ -214,7 +214,7 @@
                 make.centerX.equalTo(self.contentView);
             }];
         }
-    } else if (_model.callType == EaseCallTypeMulti) {
+    } else if (_model.callType == EaseCallTypeMultiVideo) {
         _statelabel.hidden = _model.joined;
         _avatarImageView.hidden = _model.enableVideo;
         _nameLabel.hidden = _avatarImageView.hidden;
@@ -269,7 +269,7 @@
     } else if (_model.callType == EaseCallType1v1Video) {
         _voiceStatusView.hidden = _model.enableVoice || !_model.isMini;
         _videoStatusView.hidden = _model.enableVideo || !_model.isMini;
-    } else if (_model.callType == EaseCallTypeMulti) {
+    } else if (_model.callType == EaseCallTypeMultiVideo) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
         _videoStatusView.hidden = _model.enableVideo || !_model.joined || _model.isMini;
     } else if (_model.callType == EaseCallTypeMultiAudio) {
@@ -277,7 +277,7 @@
         _videoStatusView.hidden = YES;
     }
     
-    if (_model.callType == EaseCallTypeMulti || _model.callType == EaseCallType1v1Video) {
+    if (_model.callType == EaseCallTypeMultiVideo || _model.callType == EaseCallType1v1Video) {
         _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"microphone_close"];
         CGFloat right = 5;
         if (!_voiceStatusView.hidden) {

@@ -27,6 +27,5 @@
 - (void)setupRemoteVideoView:(NSUInteger)uid withDisplayView:(UIView *)view;
 - (void)joinChannel;
 - (void)switchToVoice;
-- (void)sendVideoToVoiceMsg;
 
 @end /* AgoraChatCallManager_Private_h */

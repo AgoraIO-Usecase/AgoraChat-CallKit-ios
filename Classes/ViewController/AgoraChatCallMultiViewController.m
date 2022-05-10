@@ -44,7 +44,7 @@
         
         AgoraChatCallStreamViewModel *model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = 0;
-        model.enableVideo = self.callType == EaseCallTypeMulti;
+        model.enableVideo = self.callType == EaseCallTypeMultiVideo;
         model.callType = self.callType;
         model.isMini = NO;
         model.joined = self.inviterId.length <= 0;
@@ -64,7 +64,7 @@
         model.callType = callType;
     }
     [_collectionView reloadData];
-    if (callType == EaseCallTypeMulti) {
+    if (callType == EaseCallTypeMultiVideo) {
         _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
         if (_allUserList[0].enableVideo) {
             [AgoraChatCallManager.sharedManager startPreview];
@@ -110,7 +110,7 @@
     
     __weak typeof(self)weakSelf = self;
     AgoraChatCallMultiViewLayout *layout = [[AgoraChatCallMultiViewLayout alloc] init];
-    layout.isVideo = self.callType == EaseCallTypeMulti;
+    layout.isVideo = self.callType == EaseCallTypeMultiVideo;
     layout.getVideoEnableBlock = ^BOOL(NSIndexPath * _Nonnull indexPath) {
         if (weakSelf.allUserList.count <= indexPath.item) {
             return YES;
@@ -125,7 +125,7 @@
     [self.contentView insertSubview:_collectionView atIndex:0];
     [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.centerX.equalTo(self.contentView);
-        make.top.equalTo(self.callType == EaseCallTypeMulti ? @0 : @97);
+        make.top.equalTo(self.callType == EaseCallTypeMultiVideo ? @0 : @97);
         make.bottom.equalTo(self.buttonView.mas_top);
     }];
     
@@ -134,7 +134,7 @@
         AgoraChatCallStreamViewModel *localModel = _allUserList.firstObject;
         localModel.showUserHeaderURL = remoteUrl;
         localModel.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.inviterId];
-        if (self.callType == EaseCallTypeMulti) {
+        if (self.callType == EaseCallTypeMultiVideo) {
             localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiVidioCall",nil);
         } else {
             localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiAudioCall",nil);
@@ -263,7 +263,7 @@
     self.microphoneButton.hidden = !self.isJoined;
     
     if (!self.isJoined) {
-        if (self.callType == EaseCallTypeMulti) {
+        if (self.callType == EaseCallTypeMultiVideo) {
             self.speakerButton.hidden = YES;
             self.switchCameraButton.hidden = YES;
             self.enableCameraButton.hidden = NO;
@@ -296,7 +296,7 @@
     }
 
     self.answerButton.hidden = YES;
-    if (self.callType == EaseCallTypeMulti) {
+    if (self.callType == EaseCallTypeMultiVideo) {
         self.enableCameraButton.hidden = NO;
         self.speakerButton.hidden = YES;
         self.switchCameraButton.hidden = NO;
@@ -457,7 +457,7 @@
         int s = timeLength - m * 60;
         _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
     } else {
-        if (self.callType == EaseCallTypeMulti) {
+        if (self.callType == EaseCallTypeMultiVideo) {
             _miniView.model.showUsername = AgoraChatCallLocalizableString(@"VideoCall",nil);
         } else {
             _miniView.model.showUsername = AgoraChatCallLocalizableString(@"AudioCall",nil);
@@ -543,7 +543,7 @@
         return;
     }
     
-    if (self.callType != EaseCallTypeMulti) {
+    if (self.callType != EaseCallTypeMultiVideo) {
         return;
     }
     
@@ -588,7 +588,7 @@
     AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
     AgoraChatCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     model.isMini = NO;
-    if (self.callType == EaseCallTypeMulti) {
+    if (self.callType == EaseCallTypeMultiVideo) {
         if (model.uid == 0) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
             model.isMini = _allUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
@@ -604,7 +604,7 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (self.callType != EaseCallTypeMulti) {
+    if (self.callType != EaseCallTypeMultiVideo) {
         return;
     }
     if (indexPath.item >= _allUserList.count) {

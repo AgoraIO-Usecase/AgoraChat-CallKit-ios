@@ -12,7 +12,7 @@
 typedef NS_ENUM(NSInteger,AgoraChatCallType) {
     EaseCallType1v1Audio,       // 1v1语音
     EaseCallType1v1Video,       // 1v1视频
-    EaseCallTypeMulti,          // 多人通话
+    EaseCallTypeMultiVideo,     // 多人视频通话
     EaseCallTypeMultiAudio,     // 多人语音通话
 };
 

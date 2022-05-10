@@ -8,10 +8,11 @@
 
 @import Foundation;
 @import AgoraRtcKit;
-@import PushKit;
 #import "AgoraChatCallConfig.h"
 #import "AgoraChatCallDefine.h"
 #import "AgoraChatCallError.h"
+
+extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 
 @protocol AgoraChatCallDelegate <NSObject>
 /**
@@ -88,7 +89,7 @@
  * @param aExt              扩展信息，可添加如群组ID等信息
  * @param aCompletionBlock 完成回调
  */
-- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
+- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers groupId:(NSString *)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
 
 /**
  * 获取EaseCallKit的配置
@@ -109,15 +110,22 @@
  */
 - (void)setUsers:(NSDictionary<NSNumber*,NSString*>*_Nonnull)aUsers channelName:(NSString*_Nonnull)aChannel;
 
+/**
+ * 设置本地用户视频流是否静默
+ * @param mute 是否静默
+ */
 - (int)muteLocalVideoStream:(BOOL)mute;
+
+/**
+ * 设置是否接受远程用户的视频流
+ * @param uid        远程用户声网ID
+ * @param mute         是否静默
+ */
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
 
-- (void)pushRegistry:(nonnull PKPushRegistry *)registry didUpdatePushCredentials:(nonnull PKPushCredentials *)pushCredentials forType:(nonnull PKPushType)type;
-
-- (void)pushRegistry:(nonnull PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(nonnull PKPushPayload *)payload forType:(nonnull PKPushType)type withCompletionHandler:(nonnull void (^)(void))completion;
-
-- (void)reportIncomingCallWithTitle:(NSString *)title Sid:(NSString *)sid;
-
+/**
+ * 清除所有通话相关的资源
+ */
 - (void)clearRes;
 
 @end

@@ -10,12 +10,13 @@
 #import "AgoraChatCallDefine.h"
 #import <AgoraRtcKit/AgoraRtcEngineKit.h>
 
+// 通话状态
 typedef NS_ENUM(NSInteger, AgoraChatCallState) {
-    AgoraChatCallState_Idle,
-    AgoraChatCallState_Outgoing,
-    AgoraChatCallState_Alerting,
-    AgoraChatCallState_Answering,
-    AgoraChatCallState_Refuse,
+    AgoraChatCallState_Idle,        // 空闲
+    AgoraChatCallState_Outgoing,    // 呼叫中
+    AgoraChatCallState_Alerting,    // 被呼叫
+    AgoraChatCallState_Answering,   // 应答中
+    AgoraChatCallState_Refuse,      // 被拒绝
 };
 
 @protocol AgoraChatCallModalDelegate <NSObject>

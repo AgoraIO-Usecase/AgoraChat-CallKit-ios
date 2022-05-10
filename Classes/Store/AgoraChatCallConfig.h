@@ -56,6 +56,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) AgoraVideoEncoderConfiguration *encoderConfiguration;
 @property (nonatomic) NSUInteger agoraUid;
 
+/**
+ * 添加用户信息
+ * @param aUser 环信ID
+ * @param aInfo 用户信息
+ */
 - (void)setUser:(NSString*)aUser info:(AgoraChatCallUser*)aInfo;
 
 @end

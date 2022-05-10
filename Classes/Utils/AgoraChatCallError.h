@@ -26,7 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * 错误描述信息
  */
-@property (nonatomic) NSString* errDescription;
+@property (nonatomic) NSString *errDescription;
+
 + (instancetype)errorWithType:(AgoarChatCallErrorType)aType code:(NSInteger)errCode description:(NSString*)aDescription;
 
 @end
