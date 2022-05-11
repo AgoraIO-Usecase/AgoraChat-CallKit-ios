@@ -272,8 +272,7 @@
 
 - (void)muteAction
 {
-    self.microphoneButton.selected = !self.microphoneButton.isSelected;
-    [AgoraChatCallManager.sharedManager muteAudio:self.microphoneButton.selected];
+    [AgoraChatCallManager.sharedManager muteAudio:!self.microphoneButton.selected];
 }
 
 - (void)enableVideoAction
@@ -315,6 +314,11 @@
 - (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec
 {
     
+}
+
+- (void)didMuteAudio:(BOOL)mute
+{
+    self.microphoneButton.selected = mute;
 }
 
 @end

@@ -83,7 +83,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     return agoraChatCallManager;
 }
 
-- (void)initWithConfig:(AgoraChatCallConfig*)aConfig delegate:(id<AgoraChatCallDelegate>)aDelegate
+- (void)initWithConfig:(AgoraChatCallConfig *)aConfig delegate:(id<AgoraChatCallDelegate>)aDelegate
 {
     self.delegate= aDelegate;
     _workQueue = dispatch_queue_create("AgoraChatCallManager.WorkQ", DISPATCH_QUEUE_SERIAL);
@@ -102,7 +102,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     self.modal.curUserAccount = AgoraChatClient.sharedClient.currentUsername;
 }
 
-- (AgoraChatCallConfig*)getAgoraChatCallConfig
+- (AgoraChatCallConfig *)getAgoraChatCallConfig
 {
     return self.config;
 }
@@ -1181,7 +1181,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             [[self getMultiVC] setRemoteViewNickname:[self getNicknameByUserName:username] headImage:[self getHeadImageByUserName:username] uId:@(uid)];
         }
     } else {
-        [self getSingleVC].isConnected = YES;
         [self _stopCallTimer:self.modal.currentCall.remoteUserAccount];
         [self.modal.currentCall.allUserAccounts setObject:self.modal.currentCall.remoteUserAccount forKey:@(uid)];
     }
@@ -1348,6 +1347,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)muteAudio:(BOOL)aMuted
 {
     [self.agoraKit muteLocalAudioStream:aMuted];
+    [self.callVC didMuteAudio:aMuted];
 }
 
 - (void)speakeOut:(BOOL)aEnable

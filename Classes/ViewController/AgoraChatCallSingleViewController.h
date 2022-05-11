@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AgoraChatCallSingleViewController : AgoraChatCallBaseViewController
 
 @property (nonatomic) BOOL isCaller;
-@property (nonatomic) BOOL isConnected;
 @property (nonatomic, copy) NSString *remoteUserAccount;
 
 - (instancetype)initWithisCaller:(BOOL)aIsCaller type:(AgoraChatCallType)aType  remoteName:(NSString*)aRemoteName;

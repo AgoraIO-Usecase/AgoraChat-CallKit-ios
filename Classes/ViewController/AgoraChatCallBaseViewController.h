@@ -38,7 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) AgoraChatCallState callState;
 
 - (void)hangupAction;
-- (void)muteAction;
 - (void)enableVideoAction;
 - (void)startTimer;
 - (void)answerAction;
@@ -49,6 +48,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setupLocalVideo;
 - (void)setupRemoteVideoView:(NSUInteger)uid size:(CGSize)size;
+
+- (void)didMuteAudio:(BOOL)mute;
 
 @end
 

@@ -336,18 +336,13 @@
     [self startTimer];
 }
 
-- (void)muteAction
+- (void)didMuteAudio:(BOOL)mute
 {
-    [super muteAction];
-    _allUserList[0].enableVoice = !self.microphoneButton.isSelected;
+    [super didMuteAudio:mute];
+    _allUserList[0].enableVoice = !mute;
     AgoraChatCallStreamView *localView = self.localView;
     if (localView) {
         [localView update];
-        if (_allUserList[0].enableVoice) {
-            [AgoraChatCallManager.sharedManager muteAudio:NO];
-        } else {
-            [AgoraChatCallManager.sharedManager muteAudio:YES];
-        }
     }
 }
 

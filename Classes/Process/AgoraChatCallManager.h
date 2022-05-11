@@ -12,6 +12,8 @@
 #import "AgoraChatCallDefine.h"
 #import "AgoraChatCallError.h"
 
+@class AgoraChatMessage;
+
 extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 
 @protocol AgoraChatCallDelegate <NSObject>
@@ -123,7 +125,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  */
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
 
-- (void)joinToMutleCall:(AgoraChatMessage *)callMessage;
+- (void)joinToMutleCall:(nonnull AgoraChatMessage *)callMessage;
 
 /**
  * 清除所有通话相关的资源
