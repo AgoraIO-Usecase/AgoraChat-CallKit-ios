@@ -531,7 +531,7 @@
     } else {
         self.remoteView.model.showStatusText = [NSString stringWithFormat:@"%02d:%02d", min, sec];
     }
-    [self.remoteView update];
+    [self.remoteView updateShowingImageAndUsername];
 }
 
 - (void)setupLocalVideo

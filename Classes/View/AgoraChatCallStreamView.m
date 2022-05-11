@@ -33,7 +33,7 @@
 - (instancetype)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame]) {
-        self.layer.masksToBounds = YES;
+        self.contentView.layer.masksToBounds = YES;
         
         _bgImageView = [[UIImageView alloc] init];
         _bgImageView.contentMode = UIViewContentModeScaleAspectFill;
@@ -157,15 +157,15 @@
 {
     _displayView.hidden = !_model.enableVideo;
     if (_model.isMini) {
-        self.layer.cornerRadius = 12;
+        self.contentView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
+        self.contentView.layer.cornerRadius = 12;
         _effectView.layer.cornerRadius = 12;
         _displayView.layer.cornerRadius = 12;
-        self.backgroundColor = [UIColor colorWithWhite:0 alpha:0.7];
     } else {
-        self.layer.cornerRadius = 0;
+        self.contentView.backgroundColor = UIColor.clearColor;
+        self.contentView.layer.cornerRadius = 0;
         _effectView.layer.cornerRadius = 0;
         _displayView.layer.cornerRadius = 0;
-        self.backgroundColor = UIColor.clearColor;
     }
     _bgImageView.hidden = _avatarImageView.hidden || _model.isMini || _model.enableVideo || _model.callType == AgoraChatCallTypeMultiAudio;
     _effectView.hidden = _bgImageView.hidden;
