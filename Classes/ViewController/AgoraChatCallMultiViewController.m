@@ -44,7 +44,7 @@
         
         AgoraChatCallStreamViewModel *model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = 0;
-        model.enableVideo = self.callType == EaseCallTypeMultiVideo;
+        model.enableVideo = self.callType == AgoraChatCallTypeMultiVideo;
         model.callType = self.callType;
         model.isMini = NO;
         model.joined = self.inviterId.length <= 0;
@@ -64,7 +64,7 @@
         model.callType = callType;
     }
     [_collectionView reloadData];
-    if (callType == EaseCallTypeMultiVideo) {
+    if (callType == AgoraChatCallTypeMultiVideo) {
         _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
         if (_allUserList[0].enableVideo) {
             [AgoraChatCallManager.sharedManager startPreview];
@@ -106,11 +106,10 @@
     [self.contentView addSubview:self.inviteButton];
     
     [self.contentView bringSubviewToFront:self.inviteButton];
-    [self.inviteButton setHidden:YES];
     
     __weak typeof(self)weakSelf = self;
     AgoraChatCallMultiViewLayout *layout = [[AgoraChatCallMultiViewLayout alloc] init];
-    layout.isVideo = self.callType == EaseCallTypeMultiVideo;
+    layout.isVideo = self.callType == AgoraChatCallTypeMultiVideo;
     layout.getVideoEnableBlock = ^BOOL(NSIndexPath * _Nonnull indexPath) {
         if (weakSelf.allUserList.count <= indexPath.item) {
             return YES;
@@ -125,7 +124,7 @@
     [self.contentView insertSubview:_collectionView atIndex:0];
     [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.centerX.equalTo(self.contentView);
-        make.top.equalTo(self.callType == EaseCallTypeMultiVideo ? @0 : @97);
+        make.top.equalTo(self.callType == AgoraChatCallTypeMultiVideo ? @0 : @97);
         make.bottom.equalTo(self.buttonView.mas_top);
     }];
     
@@ -134,14 +133,14 @@
         AgoraChatCallStreamViewModel *localModel = _allUserList.firstObject;
         localModel.showUserHeaderURL = remoteUrl;
         localModel.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.inviterId];
-        if (self.callType == EaseCallTypeMultiVideo) {
+        if (self.callType == AgoraChatCallTypeMultiVideo) {
             localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiVidioCall",nil);
         } else {
             localModel.showStatusText = AgoraChatCallLocalizableString(@"MultiAudioCall",nil);
         }
     } else {
         self.isJoined = YES;
-        self.inviteButton.hidden = NO;
+        [self startTimer];
     }
     
     [self.inviteButton mas_remakeConstraints:^(MASConstraintMaker *make) {
@@ -153,11 +152,7 @@
     [self.switchCameraButton mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.miniButton);
         make.width.height.equalTo(@40);
-        if (_inviteButton.hidden) {
-            make.right.equalTo(@-18);
-        } else {
-            make.right.equalTo(self.inviteButton.mas_left).offset(-16);
-        }
+        make.right.equalTo(self.inviteButton.mas_left).offset(-16);
     }];
     
     [self.contentView bringSubviewToFront:self.miniButton];
@@ -191,8 +186,6 @@
     _joinedUserDictionary[uId] = model;
 
     [_collectionView reloadData];
-    
-    [self startTimer];
 }
 
 - (void)setRemoteViewNickname:(NSString *)nickname headImage:(NSURL *)url uId:(NSNumber *)uid
@@ -263,7 +256,7 @@
     self.microphoneButton.hidden = !self.isJoined;
     
     if (!self.isJoined) {
-        if (self.callType == EaseCallTypeMultiVideo) {
+        if (self.callType == AgoraChatCallTypeMultiVideo) {
             self.speakerButton.hidden = YES;
             self.switchCameraButton.hidden = YES;
             self.enableCameraButton.hidden = NO;
@@ -296,7 +289,7 @@
     }
 
     self.answerButton.hidden = YES;
-    if (self.callType == EaseCallTypeMultiVideo) {
+    if (self.callType == AgoraChatCallTypeMultiVideo) {
         self.enableCameraButton.hidden = NO;
         self.speakerButton.hidden = YES;
         self.switchCameraButton.hidden = NO;
@@ -340,6 +333,7 @@
     self.isJoined = YES;
     _allUserList.firstObject.joined = YES;
     [self _refreshViewPos];
+    [self startTimer];
 }
 
 - (void)muteAction
@@ -425,8 +419,8 @@
 
 - (NSArray<NSNumber *> *)getAllUserIds {
     NSMutableArray<NSNumber *> *userIds = [NSMutableArray array];
-    for (AgoraChatCallStreamViewModel *model in _allUserList) {
-        [userIds addObject:@(model.uid)];
+    for (NSNumber *uid in _joinedUserDictionary) {
+        [userIds addObject:uid];
     }
     return userIds;
 }
@@ -457,7 +451,7 @@
         int s = timeLength - m * 60;
         _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
     } else {
-        if (self.callType == EaseCallTypeMultiVideo) {
+        if (self.callType == AgoraChatCallTypeMultiVideo) {
             _miniView.model.showUsername = AgoraChatCallLocalizableString(@"VideoCall",nil);
         } else {
             _miniView.model.showUsername = AgoraChatCallLocalizableString(@"AudioCall",nil);
@@ -543,7 +537,7 @@
         return;
     }
     
-    if (self.callType != EaseCallTypeMultiVideo) {
+    if (self.callType != AgoraChatCallTypeMultiVideo) {
         return;
     }
     
@@ -588,7 +582,7 @@
     AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
     AgoraChatCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     model.isMini = NO;
-    if (self.callType == EaseCallTypeMultiVideo) {
+    if (self.callType == AgoraChatCallTypeMultiVideo) {
         if (model.uid == 0) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
             model.isMini = _allUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
@@ -604,7 +598,7 @@
 
 - (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (self.callType != EaseCallTypeMultiVideo) {
+    if (self.callType != AgoraChatCallTypeMultiVideo) {
         return;
     }
     if (indexPath.item >= _allUserList.count) {

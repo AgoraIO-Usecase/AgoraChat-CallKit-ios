@@ -135,7 +135,7 @@
     [self updateShowingImageAndUsername];
     [self updateStatusViews];
     
-    NSString *defaultImageName = (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallType1v1Video) ? @"user_avatar_default" : @"group_avatar_default";
+    NSString *defaultImageName = (_model.callType == AgoraChatCallType1v1Audio || _model.callType == AgoraChatCallType1v1Video) ? @"user_avatar_default" : @"group_avatar_default";
     if (!_avatarImageView.hidden) {
         if (_model.showUserHeaderImage) {
             _avatarImageView.image = _model.showUserHeaderImage;
@@ -146,7 +146,7 @@
         }
     }
     
-    if (_model.callType != EaseCallTypeMultiAudio) {
+    if (_model.callType != AgoraChatCallTypeMultiAudio) {
         return;
     }
     
@@ -167,7 +167,7 @@
         _displayView.layer.cornerRadius = 0;
         self.backgroundColor = UIColor.clearColor;
     }
-    _bgImageView.hidden = _avatarImageView.hidden || _model.isMini || _model.enableVideo || _model.callType == EaseCallTypeMultiAudio;
+    _bgImageView.hidden = _avatarImageView.hidden || _model.isMini || _model.enableVideo || _model.callType == AgoraChatCallTypeMultiAudio;
     _effectView.hidden = _bgImageView.hidden;
 }
 
@@ -193,7 +193,7 @@
         return;
     }
     
-    if (_model.callType == EaseCallType1v1Audio || _model.callType == EaseCallType1v1Video) {
+    if (_model.callType == AgoraChatCallType1v1Audio || _model.callType == AgoraChatCallType1v1Video) {
         if (_model.enableVideo && _model.joined) {
             _avatarImageView.hidden = YES;
             _nameLabel.hidden = YES;
@@ -214,7 +214,7 @@
                 make.centerX.equalTo(self.contentView);
             }];
         }
-    } else if (_model.callType == EaseCallTypeMultiVideo) {
+    } else if (_model.callType == AgoraChatCallTypeMultiVideo) {
         _statelabel.hidden = _model.joined;
         _avatarImageView.hidden = _model.enableVideo;
         _nameLabel.hidden = _avatarImageView.hidden;
@@ -263,21 +263,21 @@
 
 - (void)updateStatusViews
 {
-    if (_model.callType == EaseCallType1v1Audio) {
+    if (_model.callType == AgoraChatCallType1v1Audio) {
         _voiceStatusView.hidden = YES;
         _videoStatusView.hidden = YES;
-    } else if (_model.callType == EaseCallType1v1Video) {
+    } else if (_model.callType == AgoraChatCallType1v1Video) {
         _voiceStatusView.hidden = _model.enableVoice || !_model.isMini;
         _videoStatusView.hidden = _model.enableVideo || !_model.isMini;
-    } else if (_model.callType == EaseCallTypeMultiVideo) {
+    } else if (_model.callType == AgoraChatCallTypeMultiVideo) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
         _videoStatusView.hidden = _model.enableVideo || !_model.joined || _model.isMini;
-    } else if (_model.callType == EaseCallTypeMultiAudio) {
+    } else if (_model.callType == AgoraChatCallTypeMultiAudio) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
         _videoStatusView.hidden = YES;
     }
     
-    if (_model.callType == EaseCallTypeMultiVideo || _model.callType == EaseCallType1v1Video) {
+    if (_model.callType == AgoraChatCallTypeMultiVideo || _model.callType == AgoraChatCallType1v1Video) {
         _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"microphone_close"];
         CGFloat right = 5;
         if (!_voiceStatusView.hidden) {
@@ -295,7 +295,7 @@
                 make.bottom.equalTo(@(-7));
             }];
         }
-    } else if (_model.callType == EaseCallTypeMultiAudio) {
+    } else if (_model.callType == AgoraChatCallTypeMultiAudio) {
         _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"audio_call_microphone_close"];
         [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
             make.width.height.equalTo(@20);

@@ -10,10 +10,10 @@
 #define AgoraChatCallDefine_h
 // 通话类型
 typedef NS_ENUM(NSInteger,AgoraChatCallType) {
-    EaseCallType1v1Audio,       // 1v1语音
-    EaseCallType1v1Video,       // 1v1视频
-    EaseCallTypeMultiVideo,     // 多人视频通话
-    EaseCallTypeMultiAudio,     // 多人语音通话
+    AgoraChatCallType1v1Audio,       // 1v1语音
+    AgoraChatCallType1v1Video,       // 1v1视频
+    AgoraChatCallTypeMultiVideo,     // 多人视频通话
+    AgoraChatCallTypeMultiAudio,     // 多人语音通话
 };
 
 //通话结束原因

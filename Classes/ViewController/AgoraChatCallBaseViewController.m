@@ -224,11 +224,11 @@
 - (NSString *)showAlertContent
 {
     NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
-    if (_callType == EaseCallTypeMultiVideo) {
+    if (_callType == AgoraChatCallTypeMultiVideo) {
         strType = AgoraChatCallLocalizableString(@"conferenece", nil);
-    } else if (_callType == EaseCallTypeMultiAudio) {
+    } else if (_callType == AgoraChatCallTypeMultiAudio) {
         strType = AgoraChatCallLocalizableString(@"confereneceAudio", nil);
-    } else if (_callType == EaseCallType1v1Video) {
+    } else if (_callType == AgoraChatCallType1v1Video) {
         strType = AgoraChatCallLocalizableString(@"video", nil);
     }
     return [NSString stringWithFormat:AgoraChatCallLocalizableString(@"inviteInfo", nil), strType];

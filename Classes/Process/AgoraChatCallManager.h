@@ -20,7 +20,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  * @param aChannelName         通话的通道名称，用于在声网水晶球查询通话质量
  * @param aReason                    通话结束原因
  * @param aTm                             通话时长
- * @param aType    通话类型，EaseCallTypeAudio为语音通话，EaseCallTypeVideo为视频通话，EaseCallTypeMulti为多人通话
+ * @param aType    通话类型，AgoraChatCallTypeAudio为语音通话，AgoraChatCallTypeVideo为视频通话，AgoraChatCallTypeMulti为多人通话
  */
 - (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoarChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
 /**
@@ -78,7 +78,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 /**
  * 邀请成员进行单人通话
  * @param uId         被邀请人的环信ID
- * @param aType    通话类型，EaseCallTypeAudio为语音通话，EaseCallTypeVideo为视频通话
+ * @param aType    通话类型，AgoraChatCallTypeAudio为语音通话，AgoraChatCallTypeVideo为视频通话
  * @param aExt      扩展信息
  * @param aCompletionBlock 完成回调
  */
@@ -122,6 +122,8 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  * @param mute         是否静默
  */
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
+
+- (void)joinToMutleCall:(AgoraChatMessage *)callMessage;
 
 /**
  * 清除所有通话相关的资源

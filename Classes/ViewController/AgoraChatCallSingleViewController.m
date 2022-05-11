@@ -71,7 +71,7 @@
         make.width.height.equalTo(@64);
     }];
     
-    if (self.callType == EaseCallType1v1Video) {
+    if (self.callType == AgoraChatCallType1v1Video) {
         AgoraChatCallStreamViewModel *localModel = [[AgoraChatCallStreamViewModel alloc] init];
         localModel.enableVideo = YES;
         localModel.callType = self.callType;
@@ -140,7 +140,7 @@
         _remoteView.delegate = self;
         
         AgoraChatCallStreamViewModel *remoteModel = [[AgoraChatCallStreamViewModel alloc] init];
-        remoteModel.enableVideo = self.callType == EaseCallType1v1Video;
+        remoteModel.enableVideo = self.callType == AgoraChatCallType1v1Video;
         remoteModel.callType = self.callType;
         remoteModel.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.remoteUid];
         remoteModel.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:self.remoteUid];
@@ -149,7 +149,7 @@
             remoteModel.showStatusText = AgoraChatCallLocalizableString(@"calling",nil);
             self.answerButton.hidden = YES;
         } else {
-            if (self.callType == EaseCallType1v1Audio) {
+            if (self.callType == AgoraChatCallType1v1Audio) {
                 remoteModel.showStatusText = AgoraChatCallLocalizableString(@"AudioCall",nil);
             } else {
                 remoteModel.showStatusText = AgoraChatCallLocalizableString(@"VideoCall",nil);
@@ -185,7 +185,7 @@
     }
     
     if (!self.isConnected) {
-        if (self.callType == EaseCallType1v1Audio) {
+        if (self.callType == AgoraChatCallType1v1Audio) {
             self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"AudioCall",nil);
         } else {
             self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"VideoCall",nil);
@@ -197,7 +197,7 @@
     _recallButton.hidden = YES;
     _closeButton.hidden = YES;
     
-    if (self.type == EaseCallType1v1Audio) {
+    if (self.type == AgoraChatCallType1v1Audio) {
         // 音频
         self.enableCameraButton.hidden = YES;
         self.switchCameraButton.hidden = YES;
@@ -356,7 +356,7 @@
 {
     self.isMini = YES;
     AgoraChatCallStreamViewModel *model = self.remoteView.model;
-    model.enableVideo = self.type == EaseCallType1v1Video;
+    model.enableVideo = self.type == AgoraChatCallType1v1Video;
     if (self.isConnected) {
         int m = (self.timeLength) / 60;
         int s = self.timeLength - m * 60;
@@ -501,12 +501,12 @@
     _localView.model.joined = YES;
     if (isConnected) {
         [self startTimer];
-        if (self.isMini && self.type == EaseCallType1v1Video) {
+        if (self.isMini && self.type == AgoraChatCallType1v1Video) {
             _remoteView.model.enableVideo = YES;
         }
         [self setupLocalVideo];
     }
-    if (self.type == EaseCallType1v1Video && isConnected) {
+    if (self.type == AgoraChatCallType1v1Video && isConnected) {
         if (self.isMini) {
             [self updatePositionToMiniView];
         } else {
