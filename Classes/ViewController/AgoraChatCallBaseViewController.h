@@ -50,6 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setupRemoteVideoView:(NSUInteger)uid size:(CGSize)size;
 
 - (void)didMuteAudio:(BOOL)mute;
+- (void)didSpeakeOut:(BOOL)speakeOut;
 
 @end
 

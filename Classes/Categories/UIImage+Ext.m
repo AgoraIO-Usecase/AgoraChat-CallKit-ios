@@ -12,7 +12,7 @@
 
 + (UIImage *)agoraChatCallKit_imageNamed:(NSString *)imageName
 {
-    return [UIImage imageNamed:imageName inBundle:NSBundle.agoraChatCallKitBundle withConfiguration:nil];
+    return [UIImage imageNamed:imageName inBundle:NSBundle.agoraChatCallKitBundle compatibleWithTraitCollection:nil];
 }
 
 @end

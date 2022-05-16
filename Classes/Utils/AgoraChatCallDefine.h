@@ -21,7 +21,8 @@ typedef NS_ENUM(NSInteger,AgoarChatCallEndReason) {
     AgoarChatCallEndReasonHangup,// 挂断通话
     AgoarChatCallEndReasonCancel,// 取消呼叫
     AgoarChatCallEndReasonRemoteCancel,// 对方取消呼叫
-    AgoarChatCallEndReasonRefuse,// 对方拒绝呼叫
+    AgoarChatCallEndReasonRefuse,// 拒绝呼叫
+    AgoarChatCallEndReasonRemoteRefuse,// 对方拒绝呼叫
     AgoarChatCallEndReasonBusy,// 忙碌
     AgoarChatCallEndReasonNoResponse,// 无响应
     AgoarChatCallEndReasonRemoteNoResponse,// 对方无响应
@@ -40,7 +41,6 @@ typedef NS_ENUM(NSInteger,AgoraChatCallProcessErrorCode) {
     AgoraChatCallProcessErrorCodeInvalidParams = 100, // 参数错误
     AgoraChatCallProcessErrorCodeBusy, //当前处于忙碌状态
     AgoraChatCallProcessErrorCodeFetchTokenFail, //token错误
-
 };
 
 #endif /* AgoraChatCallDefine_h */

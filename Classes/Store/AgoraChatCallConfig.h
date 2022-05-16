@@ -56,6 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) AgoraVideoEncoderConfiguration *encoderConfiguration;
 @property (nonatomic) NSUInteger agoraUid;
 
+@property (nonatomic, assign) BOOL enableIosCallKit;
+
 /**
  * 添加用户信息
  * @param aUser 环信ID

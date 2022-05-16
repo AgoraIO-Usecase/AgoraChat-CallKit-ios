@@ -14,9 +14,9 @@
 - (void)hangupAction;
 - (void)acceptAction;
 - (void)inviteAction;
-- (void)enableVideo:(BOOL)aEnable;
-- (void)muteAudio:(BOOL)aMuted;
-- (void)speakeOut:(BOOL)aEnable;
+- (void)enableVideo:(BOOL)enable;
+- (void)muteAudio:(BOOL)muted;
+- (void)speakeOut:(BOOL)enable;
 - (NSString *)getNicknameByUserName:(NSString *)aUserName;
 - (NSURL *)getHeadImageByUserName:(NSString *)aUserName;
 - (NSString *)getUserNameByUid:(NSNumber *)uId;

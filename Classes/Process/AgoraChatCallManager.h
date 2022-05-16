@@ -8,9 +8,11 @@
 
 @import Foundation;
 @import AgoraRtcKit;
+@import CallKit;
 #import "AgoraChatCallConfig.h"
 #import "AgoraChatCallDefine.h"
 #import "AgoraChatCallError.h"
+@class AgoraChatMessage;
 
 @class AgoraChatMessage;
 
@@ -70,6 +72,9 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 - (instancetype _Nonnull )copy __attribute__((unavailable("call sharedManager instead")));
 - (instancetype _Nonnull )mutableCopy __attribute__((unavailable("call sharedManager instead")));
 + (instancetype _Nonnull )sharedManager;
+
+@property (nonatomic, strong, nullable) CXProvider *provider;
+
 
 /**
  * EaseCall模块初始化

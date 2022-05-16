@@ -13,10 +13,12 @@
 #import <Masonry/Masonry.h>
 #import "AgoraChatCallModal.h"
 #import "AgoraChatCallLocalizable.h"
+#import "AgoraChatCallManager+CallKit.h"
 
 @import CommonCrypto;
 @import AudioToolbox;
 @import AVFoundation;
+@import PushKit;
 
 static NSString* kAction = @"action";
 static NSString* kChannelName = @"channelName";
@@ -47,7 +49,7 @@ static NSString* kExt = @"ext";
 
 NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD = @"AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD";
 
-@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate>
+@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate, PKPushRegistryDelegate>
 
 @property (nonatomic,strong) AgoraChatCallConfig* config;
 @property (nonatomic,weak) id<AgoraChatCallDelegate> delegate;
@@ -100,6 +102,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     }
     
     self.modal.curUserAccount = AgoraChatClient.sharedClient.currentUsername;
+    [self initCallKit];
+    
+    PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:nil];
+    pushKit.delegate = self;
+    pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
 }
 
 - (AgoraChatCallConfig *)getAgoraChatCallConfig
@@ -410,17 +417,22 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if (self.delegate && [self.delegate respondsToSelector:@selector(callDidReceive:inviter:ext:)]) {
         [self.delegate callDidReceive:self.modal.currentCall.callType inviter:self.modal.currentCall.remoteUserAccount ext:self.modal.currentCall.ext];
     }
-    [self playSound];
-    if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
-        self.callVC = [[AgoraChatCallMultiViewController alloc] init];
-        [self getMultiVC].inviterId = self.modal.currentCall.remoteUserAccount;
+    
+    if (self.config.enableIosCallKit) {
+        [self reportNewIncomingCall:self.modal.currentCall];
     } else {
-        self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
-        ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
+        if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
+            self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+            [self getMultiVC].inviterId = self.modal.currentCall.remoteUserAccount;
+        } else {
+            self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
+            ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
+        }
+        self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
+        self.callVC.callType = self.modal.currentCall.callType;
+        [self playSound];
+        [self.callVC showAlert];
     }
-    self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
-    self.callVC.callType = self.modal.currentCall.callType;
-    [self.callVC showAlert];
     [self _startRingTimer:self.modal.currentCall.callId];
 }
 
@@ -579,7 +591,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kCallType:@(aType),
         kCallerDevId:self.modal.curDevId,
         kChannelName:aChannelName,
-        kTs:[self getTs]
+        kTs:[self getTs],
+        @"em_push_ext": @{
+            @"type": @"call",
+        },
+        @"em_apns_ext": @{
+            @"em_push_type": @"voip",
+        }
     } mutableCopy];
     if (aExt && aExt.count > 0) {
         [ext setValue:aExt forKey:kExt];
@@ -598,7 +616,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 }
 
 // 发送alert消息
-- (void)sendAlertMsgToCaller:(NSString*)aCallerUid callId:(NSString*)aCallId devId:(NSString*)aDevId
+- (void)sendAlertMsgToCaller:(NSString *)aCallerUid callId:(NSString *)aCallId devId:(NSString *)aDevId
 {
     if (aCallerUid.length == 0 || aCallId.length == 0 || aDevId.length == 0) {
         return;
@@ -613,7 +631,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kCallerDevId:aDevId,
         kTs:[self getTs]
     };
-    AgoraChatMessage* msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:self.modal.curUserAccount to:aCallerUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:self.modal.curUserAccount to:aCallerUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -649,7 +667,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 }
 
 // 发送取消呼叫消息
-- (void)sendCancelCallMsgToCallee:(NSString*)aUid callId:(NSString*)aCallId
+- (void)sendCancelCallMsgToCallee:(NSString *)aUid callId:(NSString *)aCallId
 {
     if (aUid.length == 0 || aCallId.length == 0) {
         return;
@@ -838,7 +856,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                         weakself.modal.state = AgoraChatCallState_Answering;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
-                            [weakself callBackCallEnd:AgoarChatCallEndReasonRefuse];
+                            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteRefuse];
                             weakself.modal.state = AgoraChatCallState_Refuse;
                         } else if ([result isEqualToString:kBusyResult]) {
                             [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
@@ -1203,6 +1221,8 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 // 对方打开/关闭音频
 - (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine didAudioMuted:(BOOL)muted byUid:(NSUInteger)uid
 {
+    AVAudioSession.sharedInstance;
+    
     if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
         [[self getMultiVC] setRemoteMute:muted uid:@(uid)];
     } else {
@@ -1254,6 +1274,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self reportCallEnd:self.modal.currentCall reason:reason];
         if (weakself.delegate && [weakself.delegate respondsToSelector:@selector(callDidEnd:reason:time:type:)]) {
             [weakself.delegate callDidEnd:weakself.modal.currentCall.channelName reason:reason time:weakself.callVC.timeLength type:weakself.modal.currentCall.callType];
         }
@@ -1293,13 +1314,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)hangupAction
 {
-    NSLog(@"hangupAction,curState:%ld",(long)self.modal.state);
+    NSLog(@"hangupAction,curState:%ld", (long)self.modal.state);
     if (self.modal.state == AgoraChatCallState_Answering) {
         // 正常挂断
         if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
             if (self.callTimerDic.count > 0) {
-                NSArray* tmArray = [self.callTimerDic allValues];
-                for (NSTimer * tm in tmArray) {
+                NSArray *tmArray = [self.callTimerDic allValues];
+                for (NSTimer *tm in tmArray) {
                     [tm fire];
                 }
                 [self.callTimerDic removeAllObjects];
@@ -1325,7 +1346,22 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)acceptAction
 {
-    [self stopSound];
+    if (self.config.enableIosCallKit) {
+        if (!self.callVC) {
+            if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
+                self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+            } else {
+                self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
+                ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
+            }
+            self.callVC.callType = self.modal.currentCall.callType;
+            self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
+            [self.callVC miniAction];
+        }
+    } else {
+        [self stopSound];
+    }
+    
     [self sendAnswerMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId result:kAcceptResult devId:self.modal.currentCall.remoteCallDevId];
 }
 
@@ -1344,15 +1380,16 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     }
 }
 
-- (void)muteAudio:(BOOL)aMuted
+- (void)muteAudio:(BOOL)muted
 {
-    [self.agoraKit muteLocalAudioStream:aMuted];
-    [self.callVC didMuteAudio:aMuted];
+    [self.agoraKit muteLocalAudioStream:muted];
+    [self.callVC didMuteAudio:muted];
 }
 
-- (void)speakeOut:(BOOL)aEnable
+- (void)speakeOut:(BOOL)enable
 {
-    [self.agoraKit setEnableSpeakerphone:aEnable];
+    [self.agoraKit setEnableSpeakerphone:enable];
+    [self.callVC didSpeakeOut:enable];
 }
 
 - (NSString *)getNicknameByUserName:(NSString*)aUserName
@@ -1503,6 +1540,27 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             [self fetchToken];
         });
     }];
+}
+
+#pragma mark - PKPushRegistryDelegate
+- (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type
+{
+    [AgoraChatClient.sharedClient registerPushKitToken:pushCredentials.token completion:^(AgoraChatError *aError) {
+        if (aError) {
+            NSLog(@"AgoraChatClient registerPushKitToken error: %@", aError.description);
+        }
+    }];
+}
+
+- (void)pushRegistry:(PKPushRegistry *)registry didInvalidatePushTokenForType:(PKPushType)type
+{
+    NSLog(@"PushKit %s type=%d", __FUNCTION__, type);
+}
+
+- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload
+             forType:(PKPushType)type withCompletionHandler:(void (^)(void))completion
+{
+    completion();
 }
 
 @end

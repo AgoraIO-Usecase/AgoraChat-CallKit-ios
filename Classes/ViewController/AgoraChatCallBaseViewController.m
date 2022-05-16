@@ -266,8 +266,9 @@
 
 - (void)speakerAction
 {
-    self.speakerButton.selected = !self.speakerButton.isSelected;
-    [AgoraChatCallManager.sharedManager speakeOut:self.speakerButton.selected];
+    BOOL speakeOut = !self.speakerButton.isSelected;
+    [AgoraChatCallManager.sharedManager speakeOut:speakeOut];
+    [self didSpeakeOut:speakeOut];
 }
 
 - (void)muteAction
@@ -319,6 +320,11 @@
 - (void)didMuteAudio:(BOOL)mute
 {
     self.microphoneButton.selected = mute;
+}
+
+- (void)didSpeakeOut:(BOOL)speakeOut
+{
+    self.speakerButton.selected = speakeOut;
 }
 
 @end
