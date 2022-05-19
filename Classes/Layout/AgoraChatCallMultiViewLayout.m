@@ -67,7 +67,7 @@
         if (showCount > (_isVideo ? 4 : 9)) {
             showCount = (_isVideo ? 4 : 9);
         }
-        for (int i = 0; i <= showCount; i ++) {
+        for (int i = 0; i < showCount; i ++) {
             UICollectionViewLayoutAttributes *layout = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:showBeginIndex + i inSection:0]];
             [result addObject:layout];
         }

@@ -16,7 +16,7 @@ typedef NS_ENUM(NSInteger, AgoraChatCallState) {
     AgoraChatCallState_Outgoing,    // 呼叫中
     AgoraChatCallState_Alerting,    // 被呼叫
     AgoraChatCallState_Answering,   // 应答中
-    AgoraChatCallState_Refuse,      // 被拒绝
+    AgoraChatCallState_Unanswered,  // 未应答
 };
 
 @protocol AgoraChatCallModalDelegate <NSObject>
@@ -32,6 +32,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AgoraChatCall : NSObject
 // 通话的callId，一次通话的唯一标识符
 @property (nonatomic,strong) NSString* callId;
+// 唤起苹果CallKit使用的UUID
+@property (nonatomic,strong) NSUUID *callUUID;
 // 通话的对端账户环信Id
 @property (nonatomic,strong) NSString* remoteUserAccount;
 // 通话的对端账户设备ID

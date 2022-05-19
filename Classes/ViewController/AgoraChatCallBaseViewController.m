@@ -223,7 +223,7 @@
 
 - (NSString *)showAlertContent
 {
-    NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
+    NSString *strType = AgoraChatCallLocalizableString(@"audio", nil);
     if (_callType == AgoraChatCallTypeMultiVideo) {
         strType = AgoraChatCallLocalizableString(@"conferenece", nil);
     } else if (_callType == AgoraChatCallTypeMultiAudio) {
@@ -313,6 +313,16 @@
 }
 
 - (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec
+{
+    
+}
+
+- (void)setupLocalVideo
+{
+    
+}
+
+- (void)setupRemoteVideoView:(NSUInteger)uid size:(CGSize)size
 {
     
 }

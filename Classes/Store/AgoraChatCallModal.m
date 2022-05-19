@@ -53,7 +53,7 @@
 
 - (void)setState:(AgoraChatCallState)state
 {
-    if(self.delegate && state != _state) {
+    if (self.delegate && state != _state) {
         [self.delegate callStateWillChangeTo:state from:_state];
     }
     _state = state;

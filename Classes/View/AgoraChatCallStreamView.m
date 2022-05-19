@@ -131,8 +131,8 @@
         _model.isTalking = NO;
     }
     
-    [self updateBG];
     [self updateShowingImageAndUsername];
+    [self updateBG];
     [self updateStatusViews];
     
     NSString *defaultImageName = (_model.callType == AgoraChatCallType1v1Audio || _model.callType == AgoraChatCallType1v1Video) ? @"user_avatar_default" : @"group_avatar_default";
@@ -171,6 +171,11 @@
     _effectView.hidden = _bgImageView.hidden;
 }
 
+- (void)removeFromSuperview
+{
+    [super removeFromSuperview];
+}
+
 - (void)updateShowingImageAndUsername
 {
     _nameLabel.text = _model.showUsername;
@@ -179,7 +184,7 @@
     if (_model.isMini) {
         _statelabel.hidden = YES;
         _avatarImageView.hidden = _model.enableVideo;
-        _nameLabel.hidden = _model.enableVideo;
+        _nameLabel.hidden = _model.enableVideo || _model.callType == AgoraChatCallType1v1Video;
         _avatarImageView.layer.cornerRadius = 18;
         [_avatarImageView mas_updateConstraints:^(MASConstraintMaker *make) {
             make.width.height.equalTo(@36);
@@ -232,7 +237,7 @@
         } else {
             [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.width.height.equalTo(@100);
-                make.centerY.equalTo(self).offset(-219);
+                make.centerY.equalTo(self).offset(-42);
                 make.centerX.equalTo(self.contentView);
             }];
             [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {

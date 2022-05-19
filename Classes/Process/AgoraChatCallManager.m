@@ -206,10 +206,12 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 }
             }
         } else {
+            NSUUID *uuid = [NSUUID UUID];
             weakself.modal.currentCall = [[AgoraChatCall alloc] init];
-            weakself.modal.currentCall.channelName = [[NSUUID UUID] UUIDString];
+            weakself.modal.currentCall.channelName = [uuid UUIDString];
             weakself.modal.currentCall.callType = callType;
-            weakself.modal.currentCall.callId = [[NSUUID UUID] UUIDString];
+            weakself.modal.currentCall.callUUID = uuid;
+            weakself.modal.currentCall.callId = [uuid UUIDString];
             weakself.modal.currentCall.isCaller = YES;
             weakself.modal.state = AgoraChatCallState_Answering;
             weakself.modal.currentCall.ext = aExt;
@@ -254,11 +256,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [self callBackError:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeBusy description:@"current is busy"];
             }
         } else {
+            NSUUID *uuid = [NSUUID UUID];
             weakself.modal.currentCall = [[AgoraChatCall alloc] init];
-            weakself.modal.currentCall.channelName = [[NSUUID UUID] UUIDString];
+            weakself.modal.currentCall.channelName = [uuid UUIDString];
             weakself.modal.currentCall.remoteUserAccount = uId;
             weakself.modal.currentCall.callType = (AgoraChatCallType)aType;
-            weakself.modal.currentCall.callId = [[NSUUID UUID] UUIDString];
+            weakself.modal.currentCall.callId = [uuid UUIDString];
+            weakself.modal.currentCall.callUUID = uuid;
             weakself.modal.currentCall.isCaller = YES;
             weakself.modal.state = AgoraChatCallState_Outgoing;
             weakself.modal.currentCall.ext = aExt;
@@ -275,10 +279,15 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 // 是否处于忙碌状态
 - (BOOL)isBusy
 {
-    return self.modal.currentCall && (self.modal.state != AgoraChatCallState_Idle && self.modal.state != AgoraChatCallState_Refuse);
+    return self.modal.currentCall && (self.modal.state != AgoraChatCallState_Idle && self.modal.state != AgoraChatCallState_Unanswered);
 }
 
 - (void)clearRes
+{
+    [self clearResWithViewController:YES];
+}
+
+- (void)clearResWithViewController:(BOOL)withViewController
 {
     NSLog(@"cleraRes");
     if (self.modal.currentCall) {
@@ -297,7 +306,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         }
     }
     
-    if (self.callVC) {
+    if (withViewController && self.callVC) {
         if (self.callVC.isMini) {
             [self.callVC callFinish];
             self.callVC = nil;
@@ -333,15 +342,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (UIWindow *)getKeyWindow
 {
     if (@available(iOS 13.0, *)) {
-        for (UIWindowScene* scene in UIApplication.sharedApplication.connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                if (@available(iOS 15.0, *)) {
-                    return scene.keyWindow;
-                } else {
-                    for (UIWindow *window in scene.windows) {
-                        if (window.isKeyWindow) {
-                            return window;
-                        }
+        for (UIWindowScene *scene in UIApplication.sharedApplication.connectedScenes) {
+            if (@available(iOS 15.0, *)) {
+                return scene.keyWindow;
+            } else {
+                for (UIWindow *window in scene.windows) {
+                    if (window.isKeyWindow) {
+                        return window;
                     }
                 }
             }
@@ -459,7 +466,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     NSLog(@"callState will chageto:%ld from:%ld",newState,(long)preState);
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.callVC.callState = self.modal.state;
+        self.callVC.callState = newState;
         switch (newState) {
             case AgoraChatCallState_Idle:
                 if (preState == AgoraChatCallState_Answering) {
@@ -479,11 +486,12 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                             kCallId:callId,
                             kCallerDevId:self.modal.curDevId,
                             kTs:[self getTs],
+                            kCallType:@(self.modal.currentCall.callType),
                             kCallDuration:@(self.callVC.timeLength),
                         };
                         AgoraChatConversation *conversation = [AgoraChatClient.sharedClient.chatManager getConversationWithConvId:conversationId];
                         if (conversation) {
-                            NSString *text = self.modal.currentCall.callType == AgoraChatCallType1v1Audio ? @"Audio Call Ended" : @"Video Call Ended";
+                            NSString *text = self.modal.currentCall.callType == AgoraChatCallType1v1Audio || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio ? @"Audio Call Ended" : @"Video Call Ended";
                             AgoraChatTextMessageBody *body = [[AgoraChatTextMessageBody alloc] initWithText:text];
                             AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:conversationId from:self.modal.curUserAccount to:conversationId body:body ext:ext];
                             [conversation insertMessage:msg error:nil];
@@ -504,29 +512,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             case AgoraChatCallState_Answering:
                 [self refreshUIAnswering];
                 break;
-            case AgoraChatCallState_Refuse:
-                if (self.modal.state == AgoraChatCallState_Refuse && (self.modal.currentCall.callType == AgoraChatCallType1v1Audio || self.modal.currentCall.callType == AgoraChatCallType1v1Video)) {
-                    
-                    self.modal.currentCall = nil;
-                    
-                    NSArray *timers = [self.callTimerDic allValues];
-                    for (NSTimer *tm in timers) {
-                        [tm invalidate];
-                    }
-                    [self.callTimerDic removeAllObjects];
-                    NSArray *alertTimers = [self.alertTimerDic allValues];
-                    for (NSTimer *tm in alertTimers) {
-                        [tm invalidate];
-                    }
-                    if (self.confirmTimer) {
-                        [self.confirmTimer invalidate];
-                        self.confirmTimer = nil;
-                    }
-                    if (self.ringTimer) {
-                        [self.ringTimer invalidate];
-                        self.ringTimer = nil;
-                    }
-                    
+            case AgoraChatCallState_Unanswered:
+                if (self.modal.state == AgoraChatCallState_Unanswered && (self.modal.currentCall.callType == AgoraChatCallType1v1Audio || self.modal.currentCall.callType == AgoraChatCallType1v1Video)) {
+                    [self clearResWithViewController:NO];
                 } else {
                     [self clearRes];
                 }
@@ -571,7 +559,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     AgoraChatType chatType = isGroup ? AgoraChatTypeGroupChat : AgoraChatTypeChat;
     AgoraChatMessageBody *msgBody;
     if (aType == AgoraChatCallType1v1Video || aType == AgoraChatCallType1v1Audio || isGroup) {
-        NSString *strType = AgoraChatCallLocalizableString(@"voice", nil);
+        NSString *strType = AgoraChatCallLocalizableString(@"audio", nil);
         if (aType == AgoraChatCallTypeMultiVideo) {
             strType = AgoraChatCallLocalizableString(@"conferenece", nil);
         } else if (aType == AgoraChatCallTypeMultiAudio) {
@@ -790,8 +778,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if ([weakself isBusy]) {
             [weakself sendAnswerMsg:from callId:callId result:kBusyResult devId:callerDevId];
         } else {
+            NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:callId];
+            if (!uuid) {
+                uuid = [NSUUID UUID];
+            }
             AgoraChatCall *call = [[AgoraChatCall alloc] init];
             call.callId = callId;
+            call.callUUID = uuid;
             call.isCaller = NO;
             call.callType = (AgoraChatCallType)[callType intValue];
             call.remoteCallDevId = callerDevId;
@@ -857,7 +850,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
                             [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteRefuse];
-                            weakself.modal.state = AgoraChatCallState_Refuse;
+                            weakself.modal.state = AgoraChatCallState_Unanswered;
                         } else if ([result isEqualToString:kBusyResult]) {
                             [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
                             weakself.modal.state = AgoraChatCallState_Idle;
@@ -978,7 +971,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self sendCancelCallMsgToCallee:aRemoteUser callId:self.modal.currentCall.callId];
     if (self.modal.currentCall.callType != AgoraChatCallTypeMultiVideo && self.modal.currentCall.callType != AgoraChatCallTypeMultiAudio) {
         [self callBackCallEnd:AgoarChatCallEndReasonRemoteNoResponse];
-        self.modal.state = AgoraChatCallState_Idle;
+        self.modal.state = AgoraChatCallState_Unanswered;
     } else {
         __weak typeof(self) weakself = self;
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -992,7 +985,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     NSLog(@"_startAlertTimer,callId:%@",callId);
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSTimer *tm = [NSTimer scheduledTimerWithTimeInterval:5.0 target:self selector:@selector(_timeoutAlert:) userInfo:callId repeats:NO];
+        NSTimer *tm = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(_timeoutAlert:) userInfo:callId repeats:NO];
         [weakself.alertTimerDic setObject:tm forKey:callId];
     });
 }
@@ -1037,7 +1030,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if(weakself.confirmTimer) {
             [weakself.confirmTimer invalidate];
         }
-        weakself.confirmTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 target:self selector:@selector(_timeoutConfirm:) userInfo:callId repeats:NO];
+        weakself.confirmTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(_timeoutConfirm:) userInfo:callId repeats:NO];
     });
 }
 
@@ -1234,7 +1227,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteVideoDecodedOfUid:(NSUInteger)uid size:(CGSize)size elapsed:(NSInteger)elapsed
 {
     [self.callVC setupRemoteVideoView:uid size:size];
-    //[[EMClient sharedClient] log:[NSString stringWithFormat:@"firstRemoteVideoDecodedOfUid:%lu",uid]];
 }
 
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteAudioFrameOfUid:(NSUInteger)uid elapsed:(NSInteger)elapsed
@@ -1428,7 +1420,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
     canvas.uid = uid;
-    canvas.renderMode = AgoraVideoRenderModeFit;
+    canvas.renderMode = AgoraVideoRenderModeFill;
     canvas.view = view;
     [self.agoraKit setupRemoteVideo:canvas];
 }
@@ -1446,7 +1438,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self setupVideo];
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
     canvas.uid = 0;
-    canvas.renderMode = AgoraVideoRenderModeFit;
+    canvas.renderMode = AgoraVideoRenderModeFill;
     canvas.view = displayView;
     [self.agoraKit setupLocalVideo:canvas];
     if (displayView) {
@@ -1512,9 +1504,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if ([self isBusy]) {
         return;
     }
-    
+    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:callId];
+    if (!uuid) {
+        uuid = [NSUUID UUID];
+    }
     AgoraChatCall *call = [[AgoraChatCall alloc] init];
     call.callId = callId;
+    call.callUUID = uuid;
     call.isCaller = NO;
     call.callType = (AgoraChatCallType)[callType intValue];
     call.remoteCallDevId = callerDevId;

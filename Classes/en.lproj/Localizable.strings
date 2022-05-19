@@ -5,9 +5,9 @@
   Created by lixiaoming on 2021/12/2.
   
 */
-"voice" = "voice";
+"audio" = "audio";
 "conferenece" = " video conferenece";
-"confereneceAudio" = "voice conferenece";
+"confereneceAudio" = "audio conferenece";
 "video" = "video";
 "inviteInfo" = "Invite you to a %@ call";
 "calling" = "Calling...";

@@ -137,4 +137,6 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  */
 - (void)clearRes;
 
+- (UIWindow *)getKeyWindow;
+
 @end

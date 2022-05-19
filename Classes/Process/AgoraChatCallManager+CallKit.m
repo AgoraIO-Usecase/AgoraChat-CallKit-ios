@@ -45,9 +45,14 @@
     update.supportsDTMF = NO;
     update.hasVideo = call.callType == AgoraChatCallType1v1Video || call.callType == AgoraChatCallTypeMultiVideo;
     update.localizedCallerName = call.remoteUserAccount;
-    [self.provider reportNewIncomingCallWithUUID:[[NSUUID alloc] initWithUUIDString:call.callId] update:update completion:^(NSError * _Nullable error) {
-        NSLog(@"%@", error);
-    }];
+    if (call.callUUID) {
+        [self.provider reportNewIncomingCallWithUUID:call.callUUID update:update completion:^(NSError * _Nullable error) {
+            NSLog(@"%@", error);
+        }];
+    } else {
+    
+        [self clearRes];
+    }
 }
 
 - (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason
@@ -88,9 +93,9 @@
             callKitReason = CXCallEndedReasonUnanswered;
             break;
     }
-    NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:call.callId];
-    if (uuid) {
-        [self.provider reportCallWithUUID:[[NSUUID alloc] initWithUUIDString:call.callId] endedAtDate:[NSDate date] reason:callKitReason];
+    
+    if (call.callUUID) {
+        [self.provider reportCallWithUUID:call.callUUID endedAtDate:[NSDate date] reason:callKitReason];
     }
 }
 

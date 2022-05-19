@@ -71,25 +71,11 @@
         make.width.height.equalTo(@64);
     }];
     
-    if (self.callType == AgoraChatCallType1v1Video) {
-        AgoraChatCallStreamViewModel *localModel = [[AgoraChatCallStreamViewModel alloc] init];
-        localModel.enableVideo = YES;
-        localModel.callType = self.callType;
-        localModel.isMini = YES;
-
-        _localView = [[AgoraChatCallStreamView alloc] init];
-        _localView.delegate = self;
-        _localView.hidden = YES;
-        _localView.model = localModel;
-        [self.contentView addSubview:_localView];
-        NSURL *selfUrl = [AgoraChatCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
-        _localView.model.showUserHeaderURL = selfUrl;
-
-        if (self.callState == AgoraChatCallState_Answering) {
-            [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
-        } else {
-            [AgoraChatCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
-        }
+    [self.contentView addSubview:self.localView];
+    if (self.callState == AgoraChatCallState_Answering) {
+        [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
+    } else {
+        [AgoraChatCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
     }
     
     [self updatePos];
@@ -160,20 +146,34 @@
     return _remoteView;
 }
 
+- (AgoraChatCallStreamView *)localView
+{
+    if (!_localView && self.callType == AgoraChatCallType1v1Video) {
+        AgoraChatCallStreamViewModel *localModel = [[AgoraChatCallStreamViewModel alloc] init];
+        localModel.enableVideo = YES;
+        localModel.callType = self.callType;
+        localModel.isMini = YES;
+
+        _localView = [[AgoraChatCallStreamView alloc] init];
+        _localView.delegate = self;
+        _localView.hidden = YES;
+        _localView.model = localModel;
+        NSURL *selfUrl = [AgoraChatCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
+        _localView.model.showUserHeaderURL = selfUrl;
+    }
+    return _localView;
+}
+
 - (void)setCallState:(AgoraChatCallState)callState
 {
     [super setCallState:callState];
     
     BOOL isConnected = callState == AgoraChatCallState_Answering;
     
-    _remoteView.model.joined = isConnected;
-    _localView.model.joined = isConnected;
+    self.remoteView.model.joined = isConnected;
+    self.localView.model.joined = isConnected;
     if (isConnected) {
         [self startTimer];
-        if (self.isMini && self.type == AgoraChatCallType1v1Video) {
-            _remoteView.model.enableVideo = YES;
-        }
-        [self setupLocalVideo];
     }
     if (self.type == AgoraChatCallType1v1Video && isConnected) {
         if (self.isMini) {
@@ -182,6 +182,7 @@
             [self switchViewToBig:_remoteView];
         }
     }
+    [self setupLocalVideo];
     [_remoteView update];
     [_localView update];
     
@@ -192,7 +193,7 @@
 {
     BOOL isConnected = self.callState == AgoraChatCallState_Answering;
     
-    if (self.callState == AgoraChatCallState_Refuse) {
+    if (self.callState == AgoraChatCallState_Unanswered) {
         self.enableCameraButton.hidden = YES;
         self.switchCameraButton.hidden = YES;
         self.microphoneButton.hidden = YES;
@@ -291,7 +292,7 @@
         self.enableCameraButton.hidden = NO;
         self.speakerButton.hidden = YES;
         self.switchCameraButton.hidden = NO;
-        self.localView.hidden = !isConnected;
+        _localView.hidden = !isConnected;
         
         if (isConnected) {
             self.microphoneButton.hidden = NO;
@@ -372,29 +373,27 @@
 - (void)didMuteAudio:(BOOL)mute
 {
     [super didMuteAudio:mute];
-    self.localView.model.enableVoice = !mute;
-    [self.localView update];
+    _localView.model.enableVoice = !mute;
+    [_localView update];
 }
 
 - (void)miniAction
 {
     self.isMini = YES;
     AgoraChatCallStreamViewModel *model = self.remoteView.model;
-    model.enableVideo = self.type == AgoraChatCallType1v1Video;
     if (self.callState == AgoraChatCallState_Answering) {
         int m = (self.timeLength) / 60;
         int s = self.timeLength - m * 60;
         model.showUsername = [NSString stringWithFormat:@"%02d:%02d", m, s];
     } else {
         model.showUsername = AgoraChatCallLocalizableString(@"calling",nil);
-        model.enableVideo = NO;
     }
     _remoteView.model.isMini = YES;
     _remoteView.panGestureActionEnable = YES;
     [_remoteView update];
     
     [_remoteView removeFromSuperview];
-    [UIApplication.sharedApplication.keyWindow addSubview:_remoteView];
+    [[AgoraChatCallManager.sharedManager getKeyWindow] addSubview:_remoteView];
     [self updatePositionToMiniView];
     [self dismissViewControllerAnimated:YES completion:nil];
 }
@@ -402,7 +401,7 @@
 - (void)updateMiniViewPosition
 {
     AgoraChatCallMiniViewPosition position;
-    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     position.isLeft = _remoteView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _remoteView.frame.origin.y;
     self.miniViewPosition = position;
@@ -424,7 +423,7 @@
         size.height = 76;
     }
     if (!self.miniViewPosition.isLeft) {
-        UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+        UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
         x = keyWindow.bounds.size.width - 20 - size.width;
     }
     _remoteView.frame = CGRectMake(x, self.miniViewPosition.top, size.width, size.height);
@@ -444,8 +443,7 @@
         _remoteView.panGestureActionEnable = NO;
         _remoteView.model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.remoteUid];
         [self.remoteView removeFromSuperview];
-        UIWindow *window = UIApplication.sharedApplication.keyWindow;
-        UIViewController *rootViewController = window.rootViewController;
+        UIViewController *rootViewController = [AgoraChatCallManager.sharedManager getKeyWindow].rootViewController;
         self.modalPresentationStyle = 0;
         [rootViewController presentViewController:self animated:YES completion:nil];
         [self.contentView insertSubview:_remoteView atIndex:0];
@@ -458,7 +456,7 @@
 
 - (void)switchViewToBig:(AgoraChatCallStreamView *)view
 {
-    AgoraChatCallStreamView *otherView = view == self.localView ? self.remoteView : self.localView;
+    AgoraChatCallStreamView *otherView = view == _localView ? _remoteView : _localView;
     view.model.isMini = NO;
     otherView.model.isMini = YES;
     
@@ -490,8 +488,8 @@
 - (void)enableVideoAction
 {
     [super enableVideoAction];
-    self.localView.model.enableVideo = !self.enableCameraButton.isSelected;
-    [self.localView update];
+    _localView.model.enableVideo = !self.enableCameraButton.isSelected;
+    [_localView update];
     [self.view setNeedsLayout];
 }
 
@@ -537,9 +535,10 @@
 - (void)setupLocalVideo
 {
     if (self.callState == AgoraChatCallState_Answering) {
-        if (_localView) {
+        if (self.localView) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
         }
+        [AgoraChatCallManager.sharedManager muteLocalVideoStream:NO];
     } else {
         [AgoraChatCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
     }
@@ -549,7 +548,9 @@
 {
     [AgoraChatCallManager.sharedManager setupRemoteVideoView:uid withDisplayView:self.remoteView.displayView];
 //    _targetSize = size;
-    [self.view setNeedsLayout];
+    if (self.viewLoaded) {
+        [self.view setNeedsLayout];
+    }
 }
 
 #pragma mark - IAgoraChatCallIncomingAlertViewShowable
