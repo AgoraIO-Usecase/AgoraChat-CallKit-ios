@@ -24,6 +24,7 @@
 @property (nonatomic, strong) UICollectionView *collectionView;
 
 @property (nonatomic, strong) NSMutableArray<AgoraChatCallStreamViewModel *> *allUserList;
+@property (nonatomic, strong) NSMutableArray<AgoraChatCallStreamViewModel *> *showUserList;
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, AgoraChatCallStreamViewModel *> *joinedUserDictionary;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, AgoraChatCallStreamViewModel *> *unjoinedUserDictionary;
 
@@ -38,6 +39,7 @@
 {
     if (self = [super init]) {
         _allUserList = [NSMutableArray array];
+        _showUserList = [NSMutableArray array];
         _joinedUserDictionary = [NSMutableDictionary dictionary];
         _unjoinedUserDictionary = [NSMutableDictionary dictionary];
         _isTalkingDictionary = [NSMutableDictionary dictionary];
@@ -51,6 +53,7 @@
         model.showUsername = AgoraChatClient.sharedClient.currentUsername;
         model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
         [_allUserList addObject:model];
+        [_showUserList addObject:model];
         _joinedUserDictionary[@(0)] = model;
     }
     return self;
@@ -182,19 +185,36 @@
     
     if (isNew) {
         [_allUserList addObject:model];
+        [self updateShowUserList];
     }
     _joinedUserDictionary[uId] = model;
 
     [_collectionView reloadData];
 }
 
+- (void)updateShowUserList
+{
+    [_showUserList removeAllObjects];
+    for (AgoraChatCallStreamViewModel *model in _allUserList) {
+        if (model.showUsername.length > 0) {
+            [_showUserList addObject:model];
+        }
+    }
+}
+
 - (void)setRemoteViewNickname:(NSString *)nickname headImage:(NSURL *)url uId:(NSNumber *)uid
 {
     AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uid];
     if (model) {
+        BOOL needRefresh = model.showUsername.length <= 0;
         model.showUsername = nickname;
         model.showUserHeaderURL = url;
-        [[self streamViewWithUid:uid.integerValue] update];
+        if (needRefresh) {
+            [self updateShowUserList];
+            [self.collectionView reloadData];
+        } else {
+            [[self streamViewWithUid:uid.integerValue] update];
+        }
     }
 }
 
@@ -203,6 +223,7 @@
     AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uId];
     if (model) {
         [_allUserList removeObject:model];
+        [self updateShowUserList];
         [_joinedUserDictionary removeObjectForKey:uId];
         [_collectionView reloadData];
     }
@@ -378,6 +399,7 @@
         model.joined = NO;
         
         [_allUserList addObject:model];
+        [self updateShowUserList];
         _unjoinedUserDictionary[userName] = model;
         [_collectionView reloadData];
     }
@@ -389,6 +411,7 @@
     if (model) {
         if (model.uid == -1) {
             [_allUserList removeObject:model];
+            [self updateShowUserList];
         }
         [_unjoinedUserDictionary removeObjectForKey:userName];
         [_collectionView reloadData];
@@ -493,15 +516,24 @@
 - (void)usersInfoUpdated
 {
     dispatch_async(dispatch_get_main_queue(), ^{
+        BOOL needRefresh = NO;
         for (AgoraChatCallStreamViewModel *model in _allUserList) {
             NSString *username = [AgoraChatCallManager.sharedManager getUserNameByUid:@(model.uid)];
             if (username) {
+                if (model.showUsername.length <= 0) {
+                    needRefresh = YES;
+                }
                 model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
                 model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
             }
         }
-        for (AgoraChatCallStreamView *cell in _collectionView.visibleCells) {
-            [cell update];
+        if (needRefresh) {
+            [self updateShowUserList];
+            [self.collectionView reloadData];
+        } else {
+            for (AgoraChatCallStreamView *cell in _collectionView.visibleCells) {
+                [cell update];
+            }
         }
     });
 }
@@ -569,18 +601,18 @@
 
 #pragma mark - UICollectionViewDataSource UICollectionViewDelegate
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return _allUserList.count;
+    return _showUserList.count;
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
+    AgoraChatCallStreamViewModel *model = _showUserList[indexPath.item];
     AgoraChatCallStreamView *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"cell" forIndexPath:indexPath];
     model.isMini = NO;
     if (self.callType == AgoraChatCallTypeMultiVideo) {
         if (model.uid == 0) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
-            model.isMini = _allUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
+            model.isMini = _showUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
         } else {
             [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
             [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:cell.displayView];
@@ -596,7 +628,7 @@
     if (self.callType != AgoraChatCallTypeMultiVideo) {
         return;
     }
-    if (indexPath.item >= _allUserList.count) {
+    if (indexPath.item >= _showUserList.count) {
         return;
     }
     
@@ -606,7 +638,7 @@
         }
     }
     
-    AgoraChatCallStreamViewModel *model = _allUserList[indexPath.item];
+    AgoraChatCallStreamViewModel *model = _showUserList[indexPath.item];
     
     if (model.uid != 0) {
         [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];

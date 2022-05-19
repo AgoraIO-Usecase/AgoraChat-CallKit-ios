@@ -18,8 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithisCaller:(BOOL)aIsCaller type:(AgoraChatCallType)aType  remoteName:(NSString*)aRemoteName;
 - (void)setRemoteMute:(BOOL)aMuted;
 - (void)setRemoteEnableVideo:(BOOL)aEnabled;
-- (void)setLocalDisplayView:(UIView*)aDisplayView enableVideo:(BOOL)aEnableVideo;
-- (void)setRemoteDisplayView:(UIView*)aDisplayView enableVideo:(BOOL)aEnableVideo;
 
 @end
 
