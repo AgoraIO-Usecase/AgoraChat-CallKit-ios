@@ -32,8 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AgoraChatCall : NSObject
 // 通话的callId，一次通话的唯一标识符
 @property (nonatomic,strong) NSString* callId;
-// 唤起苹果CallKit使用的UUID
-@property (nonatomic,strong) NSUUID *callUUID;
 // 通话的对端账户环信Id
 @property (nonatomic,strong) NSString* remoteUserAccount;
 // 通话的对端账户设备ID
@@ -50,6 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) NSString* channelName;
 // 扩展字段
 @property (nonatomic,strong) NSDictionary* ext;
+
 @end
 
 @interface AgoraChatCallModal : NSObject

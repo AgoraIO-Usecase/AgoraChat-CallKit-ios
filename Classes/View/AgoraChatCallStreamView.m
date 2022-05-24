@@ -222,9 +222,9 @@
     } else if (_model.callType == AgoraChatCallTypeMultiVideo) {
         _statelabel.hidden = _model.joined;
         _avatarImageView.hidden = _model.enableVideo;
-        _nameLabel.hidden = _avatarImageView.hidden;
+        _nameLabel.hidden = NO;
         _avatarImageView.layer.cornerRadius = 50;
-        if (_model.joined) {
+        if (_model.joined && _model.enableVideo) {
             [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.width.height.equalTo(@100);
                 make.centerY.equalTo(self).offset(-42);
@@ -252,7 +252,7 @@
         _avatarImageView.layer.cornerRadius = 40;
         [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
             make.width.height.equalTo(@80);
-            make.centerY.equalTo(self).offset(-42);
+            make.top.equalTo(@18);
             make.centerX.equalTo(self.contentView);
         }];
         [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {

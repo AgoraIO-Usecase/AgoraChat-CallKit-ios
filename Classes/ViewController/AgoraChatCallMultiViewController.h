@@ -12,12 +12,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AgoraChatCallMultiViewController : AgoraChatCallBaseViewController
 
-- (void)addMember:(NSNumber *)uId enableVideo:(BOOL)aEnableVideo;
+- (void)addMember:(NSNumber *)uId username:(NSString *)username enableVideo:(BOOL)aEnableVideo;
 - (void)removeRemoteViewForUser:(NSNumber *)uId;
 - (void)setRemoteMute:(BOOL)aMuted uid:(NSNumber *)uId;
 - (void)setRemoteEnableVideo:(BOOL)aEnabled uId:(NSNumber *)uId;
 - (void)setLocalVideoView:(UIView *)localView enableVideo:(BOOL)aEnableVideo;
-- (void)setRemoteViewNickname:(NSString *)aNickname headImage:(NSURL *)url uId:(NSNumber *)aUid;
 - (void)setPlaceHolderUrl:(NSURL *)url member:(NSString *)uId;
 - (void)removePlaceHolderForMember:(NSString *)uId;
 - (void)setUser:(NSInteger)userId isTalking:(BOOL)isTalking;

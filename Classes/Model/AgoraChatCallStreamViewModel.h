@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AgoraChatCallStreamViewModel : NSObject
 
 @property (nonatomic, assign) NSInteger uid;
+@property (nonatomic, strong) NSString *agoraUsername;
 @property (nonatomic, strong) UIImage *showUserHeaderImage;
 @property (nonatomic, strong) NSString *showUsername;
 @property (nonatomic, strong) NSString *showStatusText;

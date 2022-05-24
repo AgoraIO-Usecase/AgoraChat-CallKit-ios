@@ -60,15 +60,8 @@
         UICollectionViewLayoutAttributes *layout = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:_bigIndex inSection:0]];
         [result addObject:layout];
     } else {
-        CGFloat x = floor(rect.origin.x);
-        NSInteger page = (x / _collectionViewSize.width);
-        NSInteger showBeginIndex = page * (_isVideo ? 4 : 9);
-        NSInteger showCount = _allCount - showBeginIndex;
-        if (showCount > (_isVideo ? 4 : 9)) {
-            showCount = (_isVideo ? 4 : 9);
-        }
-        for (int i = 0; i < showCount; i ++) {
-            UICollectionViewLayoutAttributes *layout = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:showBeginIndex + i inSection:0]];
+        for (int i = 0; i < _allCount; i ++) {
+            UICollectionViewLayoutAttributes *layout = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:i inSection:0]];
             [result addObject:layout];
         }
     }
@@ -109,12 +102,13 @@
                 layout.zIndex = 0;
             }
         } else if (_allCount == 3 && indexPath.item == 2) {
-            layout.frame = CGRectMake(0, floor(_collectionViewSize.height / 2), floor(_collectionViewSize.width / 2), floor(_collectionViewSize.height / 2));
+            layout.frame = CGRectMake(0, floor(_collectionViewSize.height / 2), _collectionViewSize.width, floor(_collectionViewSize.height / 2));
             layout.zIndex = 0;
         } else {
             layout.frame = [self videoFrame:indexPath];
             layout.zIndex = 0;
         }
+//        layout.frame = CGRectMake(indexPath.item * _collectionViewSize.width, 0, _collectionViewSize.width, _collectionViewSize.height);
     } else {
         layout.frame = [self audioFrame:indexPath];
         layout.zIndex = 0;
@@ -125,7 +119,7 @@
 - (CGRect)videoFrame:(NSIndexPath *)indexPath
 {
     NSInteger item = indexPath.item;
-    CGFloat x = (item + 1) / 4 * _collectionViewSize.width + item % 2 * _collectionViewSize.width / 2;
+    CGFloat x = item / 4 * _collectionViewSize.width + item % 2 * _collectionViewSize.width / 2;
     CGFloat y = item % 4 / 2 * _collectionViewSize.height / 2;
     return CGRectMake(floor(x), floor(y), floor(_collectionViewSize.width / 2), floor(_collectionViewSize.height / 2));
 }
@@ -133,7 +127,7 @@
 - (CGRect)audioFrame:(NSIndexPath *)indexPath
 {
     NSInteger item = indexPath.item;
-    CGFloat x = (item + 1) / 9 * _collectionViewSize.width + item % 3 * _collectionViewSize.width / 3 + _voiceOffset.x;
+    CGFloat x = item / 9 * _collectionViewSize.width + item % 3 * _collectionViewSize.width / 3 + _voiceOffset.x;
     CGFloat y = item % 9 / 3 * _collectionViewSize.height / 3 + _voiceOffset.y;
     return CGRectMake(floor(x), floor(y), floor(_collectionViewSize.width / 3), floor(_collectionViewSize.height / 3));
 }
@@ -143,13 +137,18 @@
     return YES;
 }
 
-//- (CGPoint)targetContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset withScrollingVelocity:(CGPoint)velocity
-//{
-//    return velocity;
-//}
+- (CGPoint)targetContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset withScrollingVelocity:(CGPoint)velocity
+{
+    NSUInteger pageIndex = (proposedContentOffset.x + _collectionViewSize.width / 2) / _collectionViewSize.width;
+    CGFloat x = pageIndex * _collectionViewSize.width;
+    return CGPointMake(x, proposedContentOffset.y);
+}
 
 - (CGSize)collectionViewContentSize
 {
+    if (_bigIndex != -1) {
+        return _collectionViewSize;
+    }
     NSInteger pageSize = _isVideo ? 4 : 9;
     NSInteger count = (_allCount + pageSize - 1) / pageSize;
     CGSize size = self.collectionView.bounds.size;

@@ -46,12 +46,13 @@
         
         AgoraChatCallStreamViewModel *model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = 0;
+        model.agoraUsername = AgoraChatClient.sharedClient.currentUsername;
         model.enableVideo = self.callType == AgoraChatCallTypeMultiVideo;
         model.callType = self.callType;
         model.isMini = NO;
         model.joined = self.inviterId.length <= 0;
-        model.showUsername = AgoraChatClient.sharedClient.currentUsername;
-        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:AgoraChatClient.sharedClient.currentUsername];
+        model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:model.agoraUsername];
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:model.agoraUsername];
         [_allUserList addObject:model];
         [_showUserList addObject:model];
         _joinedUserDictionary[@(0)] = model;
@@ -161,7 +162,7 @@
     [self.contentView bringSubviewToFront:self.miniButton];
 }
 
-- (void)addMember:(NSNumber *)uId enableVideo:(BOOL)aEnableVideo
+- (void)addMember:(NSNumber *)uId username:(NSString *)username enableVideo:(BOOL)aEnableVideo
 {
     if (_joinedUserDictionary[uId]) {
         return;
@@ -175,9 +176,9 @@
         model.isMini = NO;
         model.isTalking = NO;
         model.enableVoice = YES;
-        NSString *userName = [AgoraChatCallManager.sharedManager getUserNameByUid:uId];
-        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getNicknameByUserName:userName];
-        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:userName];
+        model.showUsername = username;
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
+        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
         isNew = YES;
     }
     model.enableVideo = aEnableVideo;
@@ -198,22 +199,6 @@
     for (AgoraChatCallStreamViewModel *model in _allUserList) {
         if (model.showUsername.length > 0) {
             [_showUserList addObject:model];
-        }
-    }
-}
-
-- (void)setRemoteViewNickname:(NSString *)nickname headImage:(NSURL *)url uId:(NSNumber *)uid
-{
-    AgoraChatCallStreamViewModel *model = _joinedUserDictionary[uid];
-    if (model) {
-        BOOL needRefresh = model.showUsername.length <= 0;
-        model.showUsername = nickname;
-        model.showUserHeaderURL = url;
-        if (needRefresh) {
-            [self updateShowUserList];
-            [self.collectionView reloadData];
-        } else {
-            [[self streamViewWithUid:uid.integerValue] update];
         }
     }
 }
@@ -520,9 +505,10 @@
         for (AgoraChatCallStreamViewModel *model in _allUserList) {
             NSString *username = [AgoraChatCallManager.sharedManager getUserNameByUid:@(model.uid)];
             if (username) {
-                if (model.showUsername.length <= 0) {
+                if (model.agoraUsername.length <= 0) {
                     needRefresh = YES;
                 }
+                model.agoraUsername = username;
                 model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
                 model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
             }
@@ -611,11 +597,7 @@
     model.isMini = NO;
     if (self.callType == AgoraChatCallTypeMultiVideo) {
         if (model.uid == 0) {
-            [AgoraChatCallManager.sharedManager setupLocalVideo:cell.displayView];
             model.isMini = _showUserList.count == 2 && ((AgoraChatCallMultiViewLayout *)collectionView.collectionViewLayout).bigIndex == -1;
-        } else {
-            [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
-            [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:cell.displayView];
         }
     }
     cell.delegate = self;
@@ -642,6 +624,19 @@
     
     if (model.uid != 0) {
         [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:YES];
+    }
+}
+
+- (void)collectionView:(UICollectionView *)collectionView willDisplayCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (self.callType == AgoraChatCallTypeMultiVideo) {
+        AgoraChatCallStreamViewModel *model = _showUserList[indexPath.item];
+        if (model.uid == 0) {
+            [AgoraChatCallManager.sharedManager setupLocalVideo:((AgoraChatCallStreamView *)cell).displayView];
+        } else {
+            [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
+            [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:((AgoraChatCallStreamView *)cell).displayView];
+        }
     }
 }
 

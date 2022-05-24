@@ -29,11 +29,16 @@
     }
     self.provider = [[CXProvider alloc] initWithConfiguration:config];
     [self.provider setDelegate:self queue:dispatch_get_main_queue()];
+    
+    self.callController = [[CXCallController alloc] initWithQueue:dispatch_get_main_queue()];
 }
 
 - (void)reportNewIncomingCall:(AgoraChatCall *)call
 {
     if (![self getAgoraChatCallConfig].enableIosCallKit) {
+        return;
+    }
+    if (self.callKitCurrentCallReportNewIncoming) {
         return;
     }
     CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:call.remoteUserAccount];
@@ -43,21 +48,24 @@
     update.supportsGrouping = NO;
     update.supportsUngrouping = NO;
     update.supportsDTMF = NO;
-    update.hasVideo = call.callType == AgoraChatCallType1v1Video || call.callType == AgoraChatCallTypeMultiVideo;
+    update.hasVideo = NO;
     update.localizedCallerName = call.remoteUserAccount;
-    if (call.callUUID) {
-        [self.provider reportNewIncomingCallWithUUID:call.callUUID update:update completion:^(NSError * _Nullable error) {
-            NSLog(@"%@", error);
-        }];
-    } else {
-    
-        [self clearRes];
+    if (self.callKitCurrentCallUUID) {
+        [self.provider reportCallWithUUID:self.callKitCurrentCallUUID endedAtDate:nil reason:CXCallEndedReasonUnanswered];
     }
+    
+    self.callKitCurrentCallUUID = [NSUUID UUID];
+    [self.provider reportNewIncomingCallWithUUID:self.callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
+        NSLog(@"%@", error);
+    }];
 }
 
 - (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason
 {
     if (![self getAgoraChatCallConfig].enableIosCallKit) {
+        return;
+    }
+    if (!self.callKitCurrentCallUUID) {
         return;
     }
     CXCallEndedReason callKitReason;
@@ -66,19 +74,19 @@
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonCancel:
-            callKitReason = CXCallEndedReasonUnanswered;
+            callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonRemoteCancel:
-            callKitReason = CXCallEndedReasonUnanswered;
+            callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonRefuse:
-            callKitReason = CXCallEndedReasonUnanswered;
+            callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonRemoteRefuse:
-            callKitReason = CXCallEndedReasonUnanswered;
+            callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonBusy:
-            callKitReason = CXCallEndedReasonUnanswered;
+            callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonNoResponse:
             callKitReason = CXCallEndedReasonUnanswered;
@@ -94,9 +102,9 @@
             break;
     }
     
-    if (call.callUUID) {
-        [self.provider reportCallWithUUID:call.callUUID endedAtDate:[NSDate date] reason:callKitReason];
-    }
+    [self.provider reportCallWithUUID:self.callKitCurrentCallUUID endedAtDate:nil reason:callKitReason];
+    self.callKitCurrentCallUUID = nil;
+    self.callKitCurrentCallReportNewIncoming = NO;
 }
 
 - (void)providerDidReset:(CXProvider *)provider
@@ -106,19 +114,24 @@
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
 {
-    [self acceptAction];
+    if ([self.callKitCurrentCallUUID isEqual:action.callUUID]) {
+        [self acceptAction];
+    }
     [action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action
 {
-    [self hangupAction];
+    if ([self.callKitCurrentCallUUID isEqual:action.callUUID]) {
+        [self hangupAction];
+    }
     [action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performSetMutedCallAction:(CXSetMutedCallAction *)action
 {
-    [self muteAudio:action.muted];
+//    action.muted = NO;
+//    [self muteAudio:action.muted];
     [action fulfill];
 }
 
