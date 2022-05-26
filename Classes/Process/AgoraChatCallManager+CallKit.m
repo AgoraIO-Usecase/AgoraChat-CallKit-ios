@@ -76,22 +76,13 @@
         case AgoarChatCallEndReasonCancel:
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
-        case AgoarChatCallEndReasonRemoteCancel:
-            callKitReason = CXCallEndedReasonRemoteEnded;
-            break;
         case AgoarChatCallEndReasonRefuse:
-            callKitReason = CXCallEndedReasonRemoteEnded;
-            break;
-        case AgoarChatCallEndReasonRemoteRefuse:
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonBusy:
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
         case AgoarChatCallEndReasonNoResponse:
-            callKitReason = CXCallEndedReasonUnanswered;
-            break;
-        case AgoarChatCallEndReasonRemoteNoResponse:
             callKitReason = CXCallEndedReasonUnanswered;
             break;
         case AgoarChatCallEndReasonHandleOnOtherDevice:
@@ -117,7 +108,9 @@
     if ([self.callKitCurrentCallUUID isEqual:action.callUUID]) {
         [self acceptAction];
     }
-    [action fulfill];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [action fulfill];
+    });
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action

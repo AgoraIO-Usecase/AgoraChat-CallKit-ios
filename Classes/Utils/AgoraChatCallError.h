@@ -12,19 +12,42 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * EaseCallKit 错误异常类
+ *  \~chinese
+ *  `EaseCallKit` 错误类。
+ *
+ *  \~english
+ *  The error class of `EaseCallKit`.
  */
 @interface AgoraChatCallError : NSObject
 /**
- * 错误类型，包括IM错误，RTC错误，业务逻辑错误
+ *  \~chinese
+ * 错误类型：
+ * - Chat 错误；
+ * - RTC 错误；
+ * - 业务逻辑错误。
+ *
+ *  \~english
+ *  The error type:
+ *  - The Chat error.
+ *  - The RTC error.
+ *  - The business logic error.
+ *
  */
 @property (nonatomic) AgoarChatCallErrorType aErrorType;
 /**
- * 错误ID
+ *  \~chinese
+ *  错误 ID。
+ *
+ *  \~english
+ *  The error ID.
  */
 @property (nonatomic) NSInteger errCode;
 /**
- * 错误描述信息
+ *  \~chinese
+ *  错误信息。
+ *
+ *  \~english
+ *  The error information.
  */
 @property (nonatomic) NSString *errDescription;
 

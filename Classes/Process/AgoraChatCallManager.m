@@ -811,7 +811,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && !weakself.modal.hasJoinedChannel) {
             [weakself _stopConfirmTimer:callId];
             [weakself _stopAlertTimer:callId];
-            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteCancel];
+            [weakself callBackCallEnd:AgoarChatCallEndReasonCancel];
             weakself.modal.state = AgoraChatCallState_Idle;
             [weakself stopSound];
         } else {
@@ -847,7 +847,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                         weakself.modal.state = AgoraChatCallState_Answering;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
-                            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteRefuse];
+                            [weakself callBackCallEnd:AgoarChatCallEndReasonRefuse];
                             weakself.modal.state = AgoraChatCallState_Unanswered;
                         } else if ([result isEqualToString:kBusyResult]) {
                             [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
@@ -968,7 +968,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self.callTimerDic removeObjectForKey:aRemoteUser];
     [self sendCancelCallMsgToCallee:aRemoteUser callId:self.modal.currentCall.callId];
     if (self.modal.currentCall.callType != AgoraChatCallTypeMultiVideo && self.modal.currentCall.callType != AgoraChatCallTypeMultiAudio) {
-        [self callBackCallEnd:AgoarChatCallEndReasonRemoteNoResponse];
+        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Unanswered;
     } else {
         __weak typeof(self) weakself = self;
@@ -1048,7 +1048,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     NSString *callId = (NSString*)[tm userInfo];
     NSLog(@"_timeoutConfirm,callId:%@",callId);
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
-        [self callBackCallEnd:AgoarChatCallEndReasonRemoteNoResponse];
+        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Idle;
     }
 }
@@ -1464,7 +1464,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             }
             weakself.modal.hasJoinedChannel = YES;
             [weakself.modal.currentCall.allUserAccounts setObject:AgoraChatClient.sharedClient.currentUsername forKey:@(uid)];
-            if (weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || weakself.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
+            if (weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo) {
                 [weakself muteLocalVideoStream:YES];
             }
             NSLog(@"-------------- fz test ");
