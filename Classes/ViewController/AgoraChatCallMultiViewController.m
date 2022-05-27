@@ -171,19 +171,19 @@
         return;
     }
     BOOL isNew = NO;
-    AgoraChatCallStreamViewModel *model = _unjoinedUserDictionary[uId];
+    AgoraChatCallStreamViewModel *model = _unjoinedUserDictionary[username];
     if (!model) {
         model = [[AgoraChatCallStreamViewModel alloc] init];
         model.callType = self.callType;
-        model.uid = uId.integerValue;
         model.isMini = NO;
         model.isTalking = NO;
         model.enableVoice = YES;
-        model.showUsername = username;
-        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
-        model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
         isNew = YES;
     }
+    model.showUsername = username;
+    model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
+    model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
+    model.uid = uId.integerValue;
     model.enableVideo = aEnableVideo;
     model.joined = YES;
     
@@ -505,9 +505,15 @@
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         BOOL needRefresh = NO;
+        NSMutableArray *removeList = [NSMutableArray array];
         for (AgoraChatCallStreamViewModel *model in _allUserList) {
             NSString *username = [AgoraChatCallManager.sharedManager getUserNameByUid:@(model.uid)];
             if (username) {
+                AgoraChatCallStreamViewModel *unjoinedModel = _unjoinedUserDictionary[username];
+                if (unjoinedModel && _joinedUserDictionary[@(model.uid)]) {
+                    [_unjoinedUserDictionary removeObjectForKey:username];
+                    [removeList addObject:unjoinedModel];
+                }
                 if (model.agoraUsername.length <= 0) {
                     needRefresh = YES;
                 }
@@ -516,6 +522,7 @@
                 model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
             }
         }
+        [_allUserList removeObjectsInArray:removeList];
         if (needRefresh) {
             [self updateShowUserList];
             [self.collectionView reloadData];

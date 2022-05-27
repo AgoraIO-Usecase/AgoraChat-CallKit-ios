@@ -127,13 +127,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     if (aUsers.count > 0 && self.modal.currentCall && [self.modal.currentCall.channelName isEqualToString:aChannel]) {
         self.modal.currentCall.allUserAccounts = [aUsers mutableCopy];
-        if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
-            NSArray<NSString *> *array = aUsers.allValues;
-            for (NSString *username in array) {
-                [[self getMultiVC] removePlaceHolderForMember:username];
-                [self _stopCallTimer:username];
-            }
-        }
+        [self.callVC usersInfoUpdated];
     }
 }
 
@@ -1183,9 +1177,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         NSString *username = [self.modal.currentCall.allUserAccounts objectForKey:@(uid)];
         [[self getMultiVC] addMember:@(uid) username:username enableVideo:self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo];
         if (username.length > 0) {
-            if ([self.callTimerDic objectForKey:username]) {
-                [self _stopCallTimer:username];
-            }
+            [self _stopCallTimer:username];
             [[self getMultiVC] removePlaceHolderForMember:username];
         }
     } else {
