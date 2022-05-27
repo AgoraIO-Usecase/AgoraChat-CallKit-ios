@@ -59,7 +59,7 @@ end
 运行`pod install`命令安装`AgoraChatCallKit`UI库。成功安装后，`Terminal`中会显示`Pod installation complete!`，此时项目文件夹下会生成一个`xcworkspace`文件。
 打开新生成的`xcworkspace`文件，连接手机，运行demo。
 
-#### 手动导入 EaseCallKit
+#### 手动导入 AgoraChatCallKit
 
 将在跑通 Demo 阶段下载的`AgoraChatCallKit.framework`复制到项目工程目录下；
 打开`Xcode`，选择工程设置 > Genaral 菜单，将`AgoraChatCallKit.framework`拖拽到工程下，在`Frameworks`、`libraries`和`Embedded Content`中设置`AgoraChatCallKit.framework`为`Embed & Sign`。
