@@ -19,7 +19,6 @@
 - (NSString *)getNicknameByUserName:(NSString *)aUserName;
 - (NSURL *)getHeadImageByUserName:(NSString *)aUserName;
 - (NSString *)getUserNameByUid:(NSNumber *)uId;
-- (void)setupLocalVideo;
 - (void)startPreview;
 - (void)setupLocalVideo:(UIView *)displayView;
 - (void)setupRemoteVideoView:(NSUInteger)uid;

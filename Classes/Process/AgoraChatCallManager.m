@@ -286,10 +286,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     NSLog(@"cleraRes");
     if (self.modal.currentCall) {
-        if (self.modal.currentCall.callType != AgoraChatCallType1v1Audio) {
-            [self.agoraKit stopPreview];
-            [self.agoraKit disableVideo];
-        }
         if (self.modal.hasJoinedChannel) {
             dispatch_async(self.workQueue, ^{
                 self.modal.hasJoinedChannel = NO;
@@ -301,14 +297,18 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         }
     }
     
-    if (withViewController && self.callVC) {
-        if (self.callVC.isMini) {
-            [self.callVC callFinish];
-            self.callVC = nil;
-        } else {
-            [self.callVC dismissViewControllerAnimated:NO completion:^{
+    if (withViewController) {
+        [self.agoraKit stopPreview];
+        [self.agoraKit disableVideo];
+        if (self.callVC) {
+            if (self.callVC.isMini) {
+                [self.callVC callFinish];
                 self.callVC = nil;
-            }];
+            } else {
+                [self.callVC dismissViewControllerAnimated:NO completion:^{
+                    self.callVC = nil;
+                }];
+            }
         }
     }
     NSLog(@"invite timer count:%lu",(unsigned long)self.callTimerDic.count);

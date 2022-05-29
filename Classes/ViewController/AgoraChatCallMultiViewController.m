@@ -76,7 +76,7 @@
         for (AgoraChatCallStreamView *view in _collectionView.visibleCells) {
             [view update];
         }
-        [AgoraChatCallManager.sharedManager muteLocalVideoStream:NO];
+        [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
     } else {
         [AgoraChatCallManager.sharedManager muteLocalVideoStream:YES];
     }
