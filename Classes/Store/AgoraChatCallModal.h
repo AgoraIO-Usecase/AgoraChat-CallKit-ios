@@ -184,14 +184,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic,strong) NSString* curDevId;
 /**
  *  \~chinese
- *  当前用户的 Chat 用户 ID。
- *
- *  \~english
- *  The Chat user ID of the current user.
- */
-@property (nonatomic,strong) NSString* curUserAccount;
-/**
- *  \~chinese
  *  当前用户加入频道时请求的 token。
  *
  *  \~english

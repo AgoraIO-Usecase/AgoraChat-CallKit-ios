@@ -101,7 +101,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 report_vad:NO];
     }
     
-    self.modal.curUserAccount = AgoraChatClient.sharedClient.currentUsername;
     [self initCallKit];
     
     PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
@@ -438,14 +437,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self _startRingTimer:self.modal.currentCall.callId];
 }
 
-- (void)setupVideo {
-    [self.agoraKit enableVideo];
-    // Default mode is disableVideo
-    
-    // Set up the configuration such as dimension, frame rate, bit rate and orientation
-    [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
-}
-
 - (AgoraChatCallSingleViewController*)getSingleVC
 {
     return (AgoraChatCallSingleViewController*)self.callVC;
@@ -488,7 +479,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                         if (conversation) {
                             NSString *text = self.modal.currentCall.callType == AgoraChatCallType1v1Audio || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio ? @"Audio Call Ended" : @"Video Call Ended";
                             AgoraChatTextMessageBody *body = [[AgoraChatTextMessageBody alloc] initWithText:text];
-                            AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:conversationId from:self.modal.curUserAccount to:conversationId body:body ext:ext];
+                            AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:conversationId from:AgoraChatClient.sharedClient.currentUsername to:conversationId body:body ext:ext];
                             [conversation insertMessage:msg error:nil];
                             [NSNotificationCenter.defaultCenter postNotificationName:AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD object:@{
                                 @"msg": @[msg]
@@ -587,7 +578,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             @"em_push_type": @"voip",
         };
     }
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:self.modal.curUserAccount to:aUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:AgoraChatClient.sharedClient.currentUsername to:aUid body:msgBody ext:ext];
     msg.chatType = chatType;
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
@@ -616,7 +607,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kCallerDevId:aDevId,
         kTs:[self getTs]
     };
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:self.modal.curUserAccount to:aCallerUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:AgoraChatClient.sharedClient.currentUsername to:aCallerUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -642,7 +633,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kTs:[self getTs],
         kCalleeDevId:aCalleeDevId
     };
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:self.modal.curUserAccount to:aUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:AgoraChatClient.sharedClient.currentUsername to:aUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -665,7 +656,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kCallerDevId:self.modal.curDevId,
         kTs:[self getTs]
     };
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:self.modal.curUserAccount to:aUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:AgoraChatClient.sharedClient.currentUsername to:aUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -694,7 +685,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if (self.modal.currentCall.callType == AgoraChatCallType1v1Audio && self.bNeedSwitchToVoice) {
         [ext setObject:@YES forKey:kVideoToVoice];
     }
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:self.modal.curUserAccount to:aCallerUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aCallerUid from:AgoraChatClient.sharedClient.currentUsername to:aCallerUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -720,7 +711,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kCalleeDevId:aDevId,kCallResult:aResult,
         kTs:[self getTs]
     };
-    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:self.modal.curUserAccount to:aUid body:msgBody ext:ext];
+    AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:AgoraChatClient.sharedClient.currentUsername to:aUid body:msgBody ext:ext];
     __weak typeof(self) weakself = self;
     [AgoraChatClient.sharedClient.chatManager sendMessage:msg progress:nil completion:^(AgoraChatMessage *message, AgoraChatError *error) {
         if (error) {
@@ -1427,15 +1418,18 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
     cameraConfig.cameraDirection = AgoraCameraDirectionFront;
     [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
-    [self setupVideo];
+    
+    [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
     AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
     canvas.uid = 0;
     canvas.renderMode = AgoraVideoRenderModeHidden;
     canvas.view = displayView;
     [self.agoraKit setupLocalVideo:canvas];
     if (displayView) {
+        [self.agoraKit enableVideo];
         [self.agoraKit startPreview];
     } else {
+        [self.agoraKit disableVideo];
         [self.agoraKit stopPreview];
     }
     [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];

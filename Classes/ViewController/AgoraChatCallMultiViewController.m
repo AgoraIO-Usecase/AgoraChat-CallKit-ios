@@ -358,6 +358,7 @@
 - (void)enableVideoAction
 {
     [super enableVideoAction];
+//    return;
     _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
     self.switchCameraButton.hidden = self.enableCameraButton.isSelected;
     if (_allUserList.count == 2) {
@@ -642,7 +643,9 @@
     if (self.callType == AgoraChatCallTypeMultiVideo) {
         AgoraChatCallStreamViewModel *model = _showUserList[indexPath.item];
         if (model.uid == 0) {
-            [AgoraChatCallManager.sharedManager setupLocalVideo:((AgoraChatCallStreamView *)cell).displayView];
+            if (model.enableVideo) {
+                [AgoraChatCallManager.sharedManager setupLocalVideo:((AgoraChatCallStreamView *)cell).displayView];
+            }
         } else {
             [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
             [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:((AgoraChatCallStreamView *)cell).displayView];
