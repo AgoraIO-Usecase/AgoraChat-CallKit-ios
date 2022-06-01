@@ -30,6 +30,6 @@ Pod::Spec.new do |s|
     }
     s.dependency 'Agora_Chat_iOS'
     s.dependency 'Masonry'
-    s.dependency 'AgoraRtcEngine_iOS/RtcBasic','3.6.2'
+    s.dependency 'AgoraRtcEngine_iOS/RtcBasic','3.6.3'
     s.dependency 'SDWebImage'
 end

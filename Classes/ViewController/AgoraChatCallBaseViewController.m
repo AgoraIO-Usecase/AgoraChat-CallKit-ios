@@ -205,7 +205,7 @@
         }];
     }
     
-    UIView *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIView *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     [keyWindow addSubview:_alertView];
     _alertView.frame = CGRectMake(8, 40, keyWindow.bounds.size.width - 16, 104);
 }
@@ -236,7 +236,7 @@
 
 - (void)show
 {
-    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     UIViewController *rootVC = keyWindow.rootViewController;
     if (rootVC.presentationController && rootVC.presentationController.presentedViewController) {
         [rootVC.presentationController.presentedViewController dismissViewControllerAnimated:NO completion:nil];

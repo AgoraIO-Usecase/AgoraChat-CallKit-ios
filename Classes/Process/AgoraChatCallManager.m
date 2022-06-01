@@ -284,17 +284,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)clearResWithViewController:(BOOL)withViewController
 {
     NSLog(@"cleraRes");
-    if (self.modal.currentCall) {
-        if (self.modal.hasJoinedChannel) {
-            dispatch_async(self.workQueue, ^{
-                self.modal.hasJoinedChannel = NO;
-                [self.agoraKit leaveChannel:^(AgoraChannelStats * _Nonnull stat) {
-                    NSLog(@"leaveChannel");
-                    //[[EMClient sharedClient] log:@"leaveChannel"];
-                }];
-            });
-        }
-    }
+    dispatch_async(self.workQueue, ^{
+        self.modal.hasJoinedChannel = NO;
+        [self.agoraKit leaveChannel:^(AgoraChannelStats * _Nonnull stat) {
+            NSLog(@"leaveChannel");
+            //[[EMClient sharedClient] log:@"leaveChannel"];
+        }];
+    });
     
     if (withViewController) {
         [self.agoraKit stopPreview];
@@ -1453,9 +1449,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             if (weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo) {
                 [weakself muteLocalVideoStream:YES];
             }
-            NSLog(@"-------------- fz test ");
         }];
-        
         [weakself speakeOut:YES];
     });
 }

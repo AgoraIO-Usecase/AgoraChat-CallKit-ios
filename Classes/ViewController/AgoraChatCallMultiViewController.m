@@ -466,7 +466,7 @@
     }
     [_miniView update];
     
-    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     if (!_miniView.superview) {
         [keyWindow addSubview:_miniView];
     }
@@ -478,7 +478,7 @@
 - (void)updateMiniViewPosition
 {
     AgoraChatCallMiniViewPosition position;
-    UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     position.isLeft = _miniView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _miniView.frame.origin.y;
     self.miniViewPosition = position;
@@ -488,7 +488,7 @@
 {
     CGFloat x = 20;
     if (!self.miniViewPosition.isLeft) {
-        UIWindow *keyWindow = UIApplication.sharedApplication.keyWindow;
+        UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
         x = keyWindow.bounds.size.width - 96;
     }
     _miniView.frame = CGRectMake(x, self.miniViewPosition.top, 76, 76);
@@ -556,7 +556,7 @@
     if (self.isMini) {
         self.isMini = NO;
         _miniView.hidden = YES;
-        UIViewController *rootViewController = UIApplication.sharedApplication.keyWindow.rootViewController;
+        UIViewController *rootViewController = [AgoraChatCallManager.sharedManager getKeyWindow].rootViewController;
         [rootViewController presentViewController:self animated:YES completion:nil];
         return;
     }
