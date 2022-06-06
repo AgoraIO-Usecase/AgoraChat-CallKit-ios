@@ -101,6 +101,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 report_vad:NO];
     }
     
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    [audioSession setCategory:AVAudioSessionCategoryPlayback error:nil];
+    [audioSession setActive:YES error:nil];
+    
     [self initCallKit];
     
     PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];

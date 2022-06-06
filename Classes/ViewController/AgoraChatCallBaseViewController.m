@@ -187,6 +187,7 @@
 
 - (void)showAlert
 {
+    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     if (!_alertView) {
         __weak typeof(self)weakSelf = self;
         NSString *title = self.showAlertTitle;
@@ -196,7 +197,7 @@
             [weakSelf show];
         } answerHandle:^{
             [weakSelf hideAlert];
-            [weakSelf miniAction];
+            [keyWindow.rootViewController presentViewController:weakSelf animated:YES completion:nil];
             [weakSelf answerAction];
         } hangupHandle:^{
             [weakSelf hideAlert];
@@ -205,7 +206,6 @@
         }];
     }
     
-    UIView *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
     [keyWindow addSubview:_alertView];
     _alertView.frame = CGRectMake(8, 40, keyWindow.bounds.size.width - 16, 104);
 }
