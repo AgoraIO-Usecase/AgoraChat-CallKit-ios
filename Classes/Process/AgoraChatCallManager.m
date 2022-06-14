@@ -108,9 +108,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     
     [self initCallKit];
     
-    PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
-    pushKit.delegate = self;
-    pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
+    if (AgoraChatCallManager.sharedManager.getAgoraChatCallConfig.enableIosCallKit) {
+        PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
+        pushKit.delegate = self;
+        pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
+    }
 }
 
 - (AgoraChatCallConfig *)getAgoraChatCallConfig
