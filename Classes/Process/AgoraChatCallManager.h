@@ -125,10 +125,10 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 -(void)remoteUserDidJoinChannel:( NSString*_Nonnull)aChannelName uid:(NSInteger)aUid username:(NSString*_Nullable)aUserName;
 /**
  * \~chinese
- * 通话中当前用户加入其他通话时触发的回调。
+ * 通话中当前用户加入通话时触发的回调。
  *
  * \~english
- * Occurs when the current user on call joins another call.
+ * Occurs when the current user on call joins call.
  *
  */
 - (void)callDidJoinChannel:(NSString*_Nonnull)aChannelName uid:(NSUInteger)aUid;
@@ -291,6 +291,14 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  */
 - (int)muteRemoteVideoStream:(NSUInteger)uid mute:(BOOL)mute;
 
+/**
+ * \~chinese
+ * 根据邀请消息加入通话。
+ *
+ * \~english
+ * Clears resources related to each call.
+ *
+ */
 - (void)joinToMutleCall:(nonnull AgoraChatMessage *)callMessage;
 
 /**
@@ -302,7 +310,5 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  *
  */
 - (void)clearRes;
-
-- (UIWindow *)getKeyWindow;
 
 @end

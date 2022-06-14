@@ -14,6 +14,7 @@
 #import "AgoraChatCallModal.h"
 #import "AgoraChatCallLocalizable.h"
 #import "AgoraChatCallManager+CallKit.h"
+#import "UIWindow+AgoraChatCallKit.h"
 
 @import CommonCrypto;
 @import AudioToolbox;
@@ -302,12 +303,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if (self.callVC) {
             if (self.callVC.isMini) {
                 [self.callVC callFinish];
-                self.callVC = nil;
             } else {
-                [self.callVC dismissViewControllerAnimated:NO completion:^{
-                    self.callVC = nil;
-                }];
+                [self.callVC dismissViewControllerAnimated:NO completion:nil];
             }
+            self.callVC = nil;
         }
     }
     NSLog(@"invite timer count:%lu",(unsigned long)self.callTimerDic.count);
@@ -333,26 +332,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     self.bNeedSwitchToVoice = NO;
 }
 
-- (UIWindow *)getKeyWindow
-{
-    if (@available(iOS 13.0, *)) {
-        for (UIWindowScene *scene in UIApplication.sharedApplication.connectedScenes) {
-            if (@available(iOS 15.0, *)) {
-                return scene.keyWindow;
-            } else {
-                for (UIWindow *window in scene.windows) {
-                    if (window.isKeyWindow) {
-                        return window;
-                    }
-                }
-            }
-        }
-    } else {
-        return [UIApplication sharedApplication].keyWindow;
-    }
-    return nil;
-}
-
 - (void)refreshUIOutgoing
 {
     if (!self.modal.currentCall) {
@@ -361,7 +340,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     
     if (!self.callVC) {
         if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
-            self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+            self.callVC = [[AgoraChatCallMultiViewController alloc] initWithCallType:self.modal.currentCall.callType];
         } else {
             self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
             ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
@@ -370,7 +349,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         
         self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
         __weak typeof(self) weakself = self;
-        UIWindow *keyWindow = [self getKeyWindow];
+        UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
         if (!keyWindow) {
             return;
         }
@@ -391,10 +370,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     }
     
     if ((self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) && self.modal.currentCall.isCaller) {
-        self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+        self.callVC = [[AgoraChatCallMultiViewController alloc] initWithCallType:self.modal.currentCall.callType];
         self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
         self.callVC.callType = self.modal.currentCall.callType;
-        UIWindow* keyWindow = [self getKeyWindow];
+        UIWindow* keyWindow = UIWindow.agoraChatCallKit_keyWindow;
         if (!keyWindow) {
             return;
         }
@@ -423,7 +402,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self reportNewIncomingCall:self.modal.currentCall];
     } else {
         if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
-            self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+            self.callVC = [[AgoraChatCallMultiViewController alloc] initWithCallType:self.modal.currentCall.callType];
             [self getMultiVC].inviterId = self.modal.currentCall.remoteUserAccount;
         } else {
             self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:NO type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
@@ -480,6 +459,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                             NSString *text = self.modal.currentCall.callType == AgoraChatCallType1v1Audio || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio ? @"Audio Call Ended" : @"Video Call Ended";
                             AgoraChatTextMessageBody *body = [[AgoraChatTextMessageBody alloc] initWithText:text];
                             AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:conversationId from:AgoraChatClient.sharedClient.currentUsername to:conversationId body:body ext:ext];
+                            msg.isRead = YES;
                             [conversation insertMessage:msg error:nil];
                             [NSNotificationCenter.defaultCenter postNotificationName:AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD object:@{
                                 @"msg": @[msg]
@@ -493,6 +473,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [self refreshUIOutgoing];
                 break;
             case AgoraChatCallState_Alerting:
+                [AgoraChatCallManager.sharedManager muteAudio:NO];
                 [self refreshUIAlerting];
                 break;
             case AgoraChatCallState_Answering:
@@ -545,15 +526,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     AgoraChatType chatType = isGroup ? AgoraChatTypeGroupChat : AgoraChatTypeChat;
     AgoraChatMessageBody *msgBody;
     if (aType == AgoraChatCallType1v1Video || aType == AgoraChatCallType1v1Audio || isGroup) {
-        NSString *strType = AgoraChatCallLocalizableString(@"audio", nil);
-        if (aType == AgoraChatCallTypeMultiVideo) {
-            strType = AgoraChatCallLocalizableString(@"conferenece", nil);
-        } else if (aType == AgoraChatCallTypeMultiAudio) {
-            strType = AgoraChatCallLocalizableString(@"confereneceAudio", nil);
-        } else if (aType == AgoraChatCallType1v1Video) {
-            strType = AgoraChatCallLocalizableString(@"video", nil);
+        NSString *strType = AgoraChatCallLocalizableString(@"StartAudioCall", nil);
+        if (aType == AgoraChatCallTypeMultiVideo || aType == AgoraChatCallType1v1Video) {
+            strType = AgoraChatCallLocalizableString(@"StartVideoCall", nil);
         }
-        msgBody = [[AgoraChatTextMessageBody alloc] initWithText:[NSString stringWithFormat: AgoraChatCallLocalizableString(@"inviteInfo", nil), strType]];
+        msgBody = [[AgoraChatTextMessageBody alloc] initWithText:strType];
     } else {
         msgBody = [[AgoraChatCmdMessageBody alloc] initWithAction:@"rtcCall"];
     }
@@ -708,7 +685,8 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         kAction:kConfirmCalleeAction,
         kCallId:aCallId,
         kCallerDevId:self.modal.curDevId,
-        kCalleeDevId:aDevId,kCallResult:aResult,
+        kCalleeDevId:aDevId,
+        kCallResult:aResult,
         kTs:[self getTs]
     };
     AgoraChatMessage *msg = [[AgoraChatMessage alloc] initWithConversationID:aUid from:AgoraChatClient.sharedClient.currentUsername to:aUid body:msgBody ext:ext];
@@ -796,7 +774,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && !weakself.modal.hasJoinedChannel) {
             [weakself _stopConfirmTimer:callId];
             [weakself _stopAlertTimer:callId];
-            [weakself callBackCallEnd:AgoarChatCallEndReasonCancel];
+            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteCancel];
             weakself.modal.state = AgoraChatCallState_Idle;
             [weakself stopSound];
         } else {
@@ -832,7 +810,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                         weakself.modal.state = AgoraChatCallState_Answering;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
-                            [weakself callBackCallEnd:AgoarChatCallEndReasonRefuse];
+                            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteRefuse];
                             weakself.modal.state = AgoraChatCallState_Unanswered;
                         } else if ([result isEqualToString:kBusyResult]) {
                             [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
@@ -882,7 +860,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 }
             } else {
                 // 已在其他端处理
-                [weakself callBackCallEnd:AgoarChatCallEndReasonHandleOnOtherDevice];
+                if ([result isEqualToString:kAcceptResult]) {
+                    [weakself callBackCallEnd:AgoarChatCallEndReasonAnswerOtherDevice];
+                } else {
+                    [weakself callBackCallEnd:AgoarChatCallEndReasonRefuseOtherDevice];
+                }
                 weakself.modal.state = AgoraChatCallState_Idle;
                 [weakself stopSound];
             }
@@ -1216,7 +1198,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine remoteVideoStateChangedOfUid:(NSUInteger)uid state:(AgoraVideoRemoteState)state reason:(AgoraVideoRemoteStateReason)reason elapsed:(NSInteger)elapsed
 {
-    NSLog(@"staate:%d,reason:%d",state,reason);
+    NSLog(@"remoteVideoStateChangedOfUid uid:%d staate:%d,reason:%d", uid, state,reason);
 //    if (reason == AgoraVideoRemoteStateReasonRemoteMuted && self.modal.currentCall.callType == AgoraChatCallType1v1Video) {
 //        __weak typeof(self) weakself = self;
 //        dispatch_async(dispatch_get_main_queue(), ^{
@@ -1321,14 +1303,14 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if (self.config.enableIosCallKit) {
         if (!self.callVC) {
             if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
-                self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+                self.callVC = [[AgoraChatCallMultiViewController alloc] initWithCallType:self.modal.currentCall.callType];
             } else {
                 self.callVC = [[AgoraChatCallSingleViewController alloc] initWithisCaller:self.modal.currentCall.isCaller type:self.modal.currentCall.callType remoteName:self.modal.currentCall.remoteUserAccount];
                 ((AgoraChatCallSingleViewController *)self.callVC).remoteUserAccount = self.modal.currentCall.remoteUserAccount;
             }
             self.callVC.callType = self.modal.currentCall.callType;
             self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
-            [[self getKeyWindow].rootViewController presentViewController:self.callVC animated:YES completion:nil];
+            [UIWindow.agoraChatCallKit_keyWindow.rootViewController presentViewController:self.callVC animated:YES completion:nil];
         }
     } else {
         [self stopSound];
@@ -1415,25 +1397,25 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)setupLocalVideo:(UIView *)displayView
 {
-    AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
-    cameraConfig.cameraDirection = AgoraCameraDirectionFront;
-    [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
-    
-    [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
-    AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
-    canvas.uid = 0;
-    canvas.renderMode = AgoraVideoRenderModeHidden;
-    canvas.view = displayView;
-    [self.agoraKit setupLocalVideo:canvas];
     if (displayView) {
+        AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
+        cameraConfig.cameraDirection = AgoraCameraDirectionFront;
+        [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
+        
+        [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
+        AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
+        canvas.uid = 0;
+        canvas.renderMode = AgoraVideoRenderModeHidden;
+        canvas.view = displayView;
+        [self.agoraKit setupLocalVideo:canvas];
         [self.agoraKit enableVideo];
         [self.agoraKit startPreview];
+        [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
+        [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
     } else {
         [self.agoraKit disableVideo];
         [self.agoraKit stopPreview];
     }
-    [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
-    [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
 }
 
 - (void)joinChannel
@@ -1454,7 +1436,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [weakself muteLocalVideoStream:YES];
             }
         }];
-        [weakself speakeOut:YES];
+        [weakself speakeOut:NO];
     });
 }
 
@@ -1499,10 +1481,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     call.ext = callExt;
     self.modal.currentCall = call;
     
-    self.callVC = [[AgoraChatCallMultiViewController alloc] init];
+    self.callVC = [[AgoraChatCallMultiViewController alloc] initWithCallType:self.modal.currentCall.callType];
     self.callVC.callType = self.modal.currentCall.callType;
     self.callVC.modalPresentationStyle = UIModalPresentationFullScreen;
-    UIWindow *keyWindow = [self getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     if (!keyWindow) {
         return;
     }

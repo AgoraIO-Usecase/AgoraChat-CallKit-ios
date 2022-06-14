@@ -73,19 +73,10 @@
         case AgoarChatCallEndReasonHangup:
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
-        case AgoarChatCallEndReasonCancel:
-            callKitReason = CXCallEndedReasonRemoteEnded;
+        case AgoarChatCallEndReasonAnswerOtherDevice:
+            callKitReason = CXCallEndedReasonAnsweredElsewhere;
             break;
-        case AgoarChatCallEndReasonRefuse:
-            callKitReason = CXCallEndedReasonRemoteEnded;
-            break;
-        case AgoarChatCallEndReasonBusy:
-            callKitReason = CXCallEndedReasonRemoteEnded;
-            break;
-        case AgoarChatCallEndReasonNoResponse:
-            callKitReason = CXCallEndedReasonUnanswered;
-            break;
-        case AgoarChatCallEndReasonHandleOnOtherDevice:
+        case AgoarChatCallEndReasonRefuseOtherDevice:
             callKitReason = CXCallEndedReasonAnsweredElsewhere;
             break;
         default:

@@ -15,6 +15,7 @@
 #import "AgoraChatCallLocalizable.h"
 #import "AgoraChatCallStreamViewModel.h"
 #import "AgoraChatCallMultiViewLayout.h"
+#import "UIWindow+AgoraChatCallKit.h"
 
 @interface AgoraChatCallMultiViewController () <AgoraChatCallStreamViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
 
@@ -22,6 +23,7 @@
 @property (nonatomic) BOOL isJoined;
 @property (nonatomic) AgoraChatCallStreamView *miniView;
 @property (nonatomic, strong) UICollectionView *collectionView;
+@property (nonatomic, strong) UILabel *timeLabel;
 
 @property (nonatomic, strong) NSMutableArray<AgoraChatCallStreamViewModel *> *allUserList;
 @property (nonatomic, strong) NSMutableArray<AgoraChatCallStreamViewModel *> *showUserList;
@@ -35,7 +37,7 @@
 
 @implementation AgoraChatCallMultiViewController
 
-- (instancetype)init
+- (instancetype)initWithCallType:(AgoraChatCallType)callType
 {
     if (self = [super init]) {
         _allUserList = [NSMutableArray array];
@@ -43,6 +45,7 @@
         _joinedUserDictionary = [NSMutableDictionary dictionary];
         _unjoinedUserDictionary = [NSMutableDictionary dictionary];
         _isTalkingDictionary = [NSMutableDictionary dictionary];
+        self.callType = callType;
         
         AgoraChatCallStreamViewModel *model = [[AgoraChatCallStreamViewModel alloc] init];
         model.uid = 0;
@@ -58,28 +61,6 @@
         _joinedUserDictionary[@(0)] = model;
     }
     return self;
-}
-
-- (void)setCallType:(AgoraChatCallType)callType
-{
-    [super setCallType:callType];
-    
-    for (AgoraChatCallStreamViewModel *model in _allUserList) {
-        model.callType = callType;
-    }
-    [_collectionView reloadData];
-    if (callType == AgoraChatCallTypeMultiVideo) {
-        _allUserList[0].enableVideo = !self.enableCameraButton.isSelected;
-        if (_allUserList[0].enableVideo) {
-            [AgoraChatCallManager.sharedManager startPreview];
-        }
-        for (AgoraChatCallStreamView *view in _collectionView.visibleCells) {
-            [view update];
-        }
-        [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
-    } else {
-        [AgoraChatCallManager.sharedManager muteLocalVideoStream:YES];
-    }
 }
 
 - (void)viewDidLoad
@@ -102,6 +83,7 @@
     
     [self setupSubViews];
     [self _refreshViewPos];
+    [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
 }
 
 - (void)setupSubViews
@@ -129,11 +111,6 @@
     _collectionView.backgroundColor = UIColor.clearColor;
     [_collectionView registerClass:AgoraChatCallStreamView.class forCellWithReuseIdentifier:@"cell"];
     [self.contentView insertSubview:_collectionView atIndex:0];
-    [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.width.centerX.equalTo(self.contentView);
-        make.top.equalTo(self.callType == AgoraChatCallTypeMultiVideo ? @0 : @97);
-        make.bottom.equalTo(self.buttonView.mas_top);
-    }];
     
     if (self.inviterId.length > 0) {
         NSURL *remoteUrl = [AgoraChatCallManager.sharedManager getHeadImageByUserName:self.inviterId];
@@ -147,8 +124,21 @@
         }
     } else {
         self.isJoined = YES;
+        if (self.callType == AgoraChatCallTypeMultiAudio) {
+            self.timeLabel.hidden = NO;
+        }
         [self startTimer];
     }
+    
+    [_collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.width.centerX.equalTo(self.contentView);
+        make.top.equalTo(self.callType == AgoraChatCallTypeMultiVideo ? @0 : @97);
+        if (self.callType == AgoraChatCallTypeMultiVideo || !self.isJoined) {
+            make.bottom.equalTo(self.buttonView.mas_top);
+        } else {
+            make.bottom.equalTo(self.buttonView.mas_top).offset(-98);
+        }
+    }];
     
     [self.inviteButton mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.miniButton);
@@ -163,6 +153,11 @@
     }];
     
     [self.contentView bringSubviewToFront:self.miniButton];
+}
+
+- (void)setCallType:(AgoraChatCallType)callType
+{
+    [super setCallType:callType];
 }
 
 - (void)addMember:(NSNumber *)uId username:(NSString *)username enableVideo:(BOOL)aEnableVideo
@@ -340,9 +335,23 @@
 {
     [super answerAction];
     self.isJoined = YES;
+    if (self.callType == AgoraChatCallTypeMultiAudio) {
+        self.timeLabel.hidden = NO;
+    }
     _allUserList.firstObject.joined = YES;
     [self _refreshViewPos];
     [self startTimer];
+    if (self.callType == AgoraChatCallTypeMultiAudio) {
+        [_collectionView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.width.centerX.equalTo(self.contentView);
+            make.top.equalTo(self.callType == AgoraChatCallTypeMultiVideo ? @0 : @97);
+            if (self.callType == AgoraChatCallTypeMultiVideo || !self.isJoined) {
+                make.bottom.equalTo(self.buttonView.mas_top);
+            } else {
+                make.bottom.equalTo(self.buttonView.mas_top).offset(-98);
+            }
+        }];
+    }
 }
 
 - (void)didMuteAudio:(BOOL)mute
@@ -466,7 +475,7 @@
     }
     [_miniView update];
     
-    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     if (!_miniView.superview) {
         [keyWindow addSubview:_miniView];
     }
@@ -478,7 +487,7 @@
 - (void)updateMiniViewPosition
 {
     AgoraChatCallMiniViewPosition position;
-    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     position.isLeft = _miniView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _miniView.frame.origin.y;
     self.miniViewPosition = position;
@@ -488,7 +497,7 @@
 {
     CGFloat x = 20;
     if (!self.miniViewPosition.isLeft) {
-        UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+        UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
         x = keyWindow.bounds.size.width - 96;
     }
     _miniView.frame = CGRectMake(x, self.miniViewPosition.top, 76, 76);
@@ -496,10 +505,12 @@
 
 - (void)callTimerDidChange:(NSUInteger)min sec:(NSUInteger)sec
 {
+    NSString *timeStr = [NSString stringWithFormat:@"%02d:%02d", min, sec];
     if (self.isJoined && self.isMini) {
-        _miniView.model.showUsername = [NSString stringWithFormat:@"%02d:%02d", min, sec];
+        _miniView.model.showUsername = timeStr;
         [_miniView update];
     }
+    _timeLabel.text = timeStr;
 }
 
 - (void)usersInfoUpdated
@@ -545,6 +556,35 @@
     [AgoraChatCallManager.sharedManager setupRemoteVideoView:uid withDisplayView:[self streamViewWithUid:uid].displayView];
 }
 
+- (UILabel *)timeLabel
+{
+    if (!_timeLabel) {
+        _timeLabel = [[UILabel alloc] init];
+        _timeLabel.hidden = YES;
+        _timeLabel.textColor = UIColor.whiteColor;
+        _timeLabel.font = [UIFont systemFontOfSize:16];
+        _timeLabel.text = @"00:00";
+        [self.contentView addSubview:_timeLabel];
+        
+        UILabel *label = [[UILabel alloc] init];
+        label.textColor = UIColor.whiteColor;
+        label.font = [UIFont systemFontOfSize:22];
+        label.text = AgoraChatCallLocalizableString(@"OngoingCall", nil);
+        [_timeLabel addSubview:label];
+        
+        [label mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(_timeLabel);
+            make.bottom.equalTo(_timeLabel.mas_top).offset(-2);
+        }];
+        
+        [_timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(self.buttonView);
+            make.bottom.equalTo(self.buttonView.mas_top).offset(-22);
+        }];
+    }
+    return _timeLabel;
+}
+
 - (void)dealloc
 {
     [_miniView removeFromSuperview];
@@ -556,7 +596,7 @@
     if (self.isMini) {
         self.isMini = NO;
         _miniView.hidden = YES;
-        UIViewController *rootViewController = [AgoraChatCallManager.sharedManager getKeyWindow].rootViewController;
+        UIViewController *rootViewController = UIWindow.agoraChatCallKit_keyWindow.rootViewController;
         [rootViewController presentViewController:self animated:YES completion:nil];
         return;
     }
@@ -647,8 +687,10 @@
                 [AgoraChatCallManager.sharedManager setupLocalVideo:((AgoraChatCallStreamView *)cell).displayView];
             }
         } else {
-            [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:NO];
-            [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:((AgoraChatCallStreamView *)cell).displayView];
+            [AgoraChatCallManager.sharedManager muteRemoteVideoStream:model.uid mute:!model.enableVideo];
+            if (model.enableVideo) {
+                [AgoraChatCallManager.sharedManager setupRemoteVideoView:model.uid withDisplayView:((AgoraChatCallStreamView *)cell).displayView];
+            }
         }
     }
 }

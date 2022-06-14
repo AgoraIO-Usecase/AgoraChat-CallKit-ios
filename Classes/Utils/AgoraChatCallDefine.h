@@ -32,10 +32,13 @@ typedef NS_ENUM(NSInteger,AgoraChatCallType) {
 typedef NS_ENUM(NSInteger,AgoarChatCallEndReason) {
     AgoarChatCallEndReasonHangup,               /** \~chinese 通话中挂断。 \~english The caller or callee hungs up to end the call. */
     AgoarChatCallEndReasonCancel,               /** \~chinese 主叫取消通话。 \~english The caller cancels the call. */
-    AgoarChatCallEndReasonRefuse,               /** \~chinese 被叫拒接。  \~english The callee refuses to answer the call. */
+    AgoarChatCallEndReasonRemoteCancel,         /** \~chinese 主叫取消通话。 \~english The caller cancels the call. */
+    AgoarChatCallEndReasonRefuse,
+    AgoarChatCallEndReasonRemoteRefuse,         /** \~chinese 被叫拒接。  \~english The callee refuses to answer the call. */
     AgoarChatCallEndReasonBusy,                 /** \~chinese 被叫忙线中。  \~english The callee is busy. */
     AgoarChatCallEndReasonNoResponse,           /** \~chinese 被叫未接听。  \~english The callee misses the call.*/
-    AgoarChatCallEndReasonHandleOnOtherDevice   /** \~chinese 该通话已在其他设备处理。  \~english The call is handled on another device.*/
+    AgoarChatCallEndReasonAnswerOtherDevice,    /** \~chinese 该通话已在其他设备处理。  \~english The call is handled on another device.*/
+    AgoarChatCallEndReasonRefuseOtherDevice,    /** \~chinese 该通话已在其他设备处理。  \~english The call is handled on another device.*/
 };
 
 /**

@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AgoraChatCallMultiViewController : AgoraChatCallBaseViewController
 
+- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)initWithCallType:(AgoraChatCallType)callType;
 - (void)addMember:(NSNumber *)uId username:(NSString *)username enableVideo:(BOOL)aEnableVideo;
 - (void)removeRemoteViewForUser:(NSNumber *)uId;
 - (void)setRemoteMute:(BOOL)aMuted uid:(NSNumber *)uId;

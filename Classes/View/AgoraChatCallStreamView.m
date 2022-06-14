@@ -276,7 +276,7 @@
         _videoStatusView.hidden = _model.enableVideo || !_model.isMini;
     } else if (_model.callType == AgoraChatCallTypeMultiVideo) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
-        _videoStatusView.hidden = _model.enableVideo || !_model.joined || _model.isMini;
+        _videoStatusView.hidden = _model.enableVideo || _model.isMini || !_model.joined;
     } else if (_model.callType == AgoraChatCallTypeMultiAudio) {
         _voiceStatusView.hidden = _model.enableVoice || _model.isMini;
         _videoStatusView.hidden = YES;

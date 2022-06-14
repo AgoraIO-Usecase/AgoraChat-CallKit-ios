@@ -15,6 +15,7 @@
 #import "AgoraChatCallManager.h"
 #import "AgoraChatCallStreamView.h"
 #import "AgoraChatCallManager+Private.h"
+#import "UIWindow+AgoraChatCallKit.h"
 
 @import AgoraChat;
 
@@ -53,11 +54,23 @@
     [_recallButton setImage:[UIImage agoraChatCallKit_imageNamed:@"call_recall"] forState:UIControlStateNormal];
     [_recallButton addTarget:self action:@selector(recallAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:_recallButton];
-
+    
+    UILabel *recallLabel = [[UILabel alloc] init];
+    recallLabel.textColor = UIColor.whiteColor;
+    recallLabel.font = [UIFont systemFontOfSize:14];
+    recallLabel.text = AgoraChatCallLocalizableString(@"Redial", nil);
+    [_recallButton addSubview:recallLabel];
+    
     _closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [_closeButton setImage:[UIImage agoraChatCallKit_imageNamed:@"call_close"] forState:UIControlStateNormal];
     [_closeButton addTarget:self action:@selector(closeAction) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:_closeButton];
+    
+    UILabel *closeLabel = [[UILabel alloc] init];
+    closeLabel.textColor = UIColor.whiteColor;
+    closeLabel.font = [UIFont systemFontOfSize:14];
+    closeLabel.text = AgoraChatCallLocalizableString(@"Close", nil);
+    [_closeButton addSubview:closeLabel];
     
     [_recallButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(@60);
@@ -69,6 +82,16 @@
         make.right.equalTo(@-60);
         make.bottom.equalTo(self.buttonView);
         make.width.height.equalTo(@64);
+    }];
+    
+    [recallLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(_recallButton);
+        make.top.equalTo(_recallButton.mas_bottom).offset(9);
+    }];
+    
+    [closeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(_closeButton);
+        make.top.equalTo(recallLabel);
     }];
     
     [self.contentView addSubview:self.localView];
@@ -179,7 +202,7 @@
         if (self.isMini) {
             [self updatePositionToMiniView];
         } else {
-            [self switchViewToBig:_remoteView];
+            [self updateStreamViewLayout];
         }
     }
     [self setupLocalVideo];
@@ -210,10 +233,15 @@
     }
     
     if (!isConnected) {
-        if (self.callType == AgoraChatCallType1v1Audio) {
-            self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"AudioCall",nil);
+        if (self.isCaller) {
+            self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"calling",nil);
+            self.answerButton.hidden = YES;
         } else {
-            self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"VideoCall",nil);
+            if (self.callType == AgoraChatCallType1v1Audio) {
+                self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"AudioCall",nil);
+            } else {
+                self.remoteView.model.showStatusText = AgoraChatCallLocalizableString(@"VideoCall",nil);
+            }
         }
         [self.remoteView update];
     }
@@ -358,7 +386,7 @@
 - (void)setRemoteEnableVideo:(BOOL)enabled
 {
     self.remoteView.model.enableVideo = enabled;
-    [self.remoteView update];
+    [self updateStreamViewLayout];
     if (self.remoteView.model.isMini) {
         [self updatePositionToMiniView];
     }
@@ -393,7 +421,7 @@
     [_remoteView update];
     
     [_remoteView removeFromSuperview];
-    [[AgoraChatCallManager.sharedManager getKeyWindow] addSubview:_remoteView];
+    [UIWindow.agoraChatCallKit_keyWindow addSubview:_remoteView];
     [self updatePositionToMiniView];
     [self dismissViewControllerAnimated:YES completion:nil];
 }
@@ -401,7 +429,7 @@
 - (void)updateMiniViewPosition
 {
     AgoraChatCallMiniViewPosition position;
-    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     position.isLeft = _remoteView.center.x <= keyWindow.bounds.size.width / 2;
     position.top = _remoteView.frame.origin.y;
     self.miniViewPosition = position;
@@ -423,7 +451,7 @@
         size.height = 76;
     }
     if (!self.miniViewPosition.isLeft) {
-        UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+        UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
         x = keyWindow.bounds.size.width - 20 - size.width;
     }
     _remoteView.frame = CGRectMake(x, self.miniViewPosition.top, size.width, size.height);
@@ -443,27 +471,34 @@
         _remoteView.panGestureActionEnable = NO;
         _remoteView.model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:self.remoteUid];
         [self.remoteView removeFromSuperview];
-        UIViewController *rootViewController = [AgoraChatCallManager.sharedManager getKeyWindow].rootViewController;
+        UIViewController *rootViewController = UIWindow.agoraChatCallKit_keyWindow.rootViewController;
         self.modalPresentationStyle = 0;
         [rootViewController presentViewController:self animated:YES completion:nil];
         [self.contentView insertSubview:_remoteView atIndex:0];
         [_remoteView update];
-        [self switchViewToBig:_remoteView];
-    } else if (aVideoView.model.isMini) {
-        [self switchViewToBig:aVideoView];
+        [self updateStreamViewLayout];
     }
 }
 
-- (void)switchViewToBig:(AgoraChatCallStreamView *)view
+- (void)updateStreamViewLayout
 {
-    AgoraChatCallStreamView *otherView = view == _localView ? _remoteView : _localView;
-    view.model.isMini = NO;
+    AgoraChatCallStreamView *bigView = _remoteView;
+    if (_remoteView.model.enableVideo) {
+        _localView.hidden = NO;
+    } else if (_localView.model.enableVideo) {
+        bigView = _localView;
+        _localView.hidden = NO;
+    } else {
+        _localView.hidden = YES;
+    }
+    AgoraChatCallStreamView *otherView = bigView == _localView ? _remoteView : _localView;
+    bigView.model.isMini = NO;
     otherView.model.isMini = YES;
     
     [_localView update];
     [_remoteView update];
     
-    [self.contentView sendSubviewToBack:view];
+    [self.contentView sendSubviewToBack:bigView];
     
     [self.view setNeedsLayout];
 }
@@ -489,8 +524,7 @@
 {
     [super enableVideoAction];
     _localView.model.enableVideo = !self.enableCameraButton.isSelected;
-    [_localView update];
-    [self.view setNeedsLayout];
+    [self updateStreamViewLayout];
 }
 
 - (void)recallAction

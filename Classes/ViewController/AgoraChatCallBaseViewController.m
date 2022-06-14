@@ -12,6 +12,7 @@
 #import "UIImage+Ext.h"
 #import "AgoraChatCallLocalizable.h"
 #import "AgoraChatCallIncomingAlertView.h"
+#import "UIWindow+AgoraChatCallKit.h"
 
 @interface AgoraChatCallBaseViewController ()
 
@@ -35,7 +36,6 @@
     [super viewDidLoad];
     
     [self setubSubViews];
-    self.speakerButton.selected = YES;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(usersInfoUpdated) name:@"AgoraChatCallUserUpdated" object:nil];
 }
 
@@ -187,7 +187,7 @@
 
 - (void)showAlert
 {
-    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     if (!_alertView) {
         __weak typeof(self)weakSelf = self;
         NSString *title = self.showAlertTitle;
@@ -236,7 +236,7 @@
 
 - (void)show
 {
-    UIWindow *keyWindow = [AgoraChatCallManager.sharedManager getKeyWindow];
+    UIWindow *keyWindow = UIWindow.agoraChatCallKit_keyWindow;
     UIViewController *rootVC = keyWindow.rootViewController;
     if (rootVC.presentationController && rootVC.presentationController.presentedViewController) {
         [rootVC.presentationController.presentedViewController dismissViewControllerAnimated:NO completion:nil];
