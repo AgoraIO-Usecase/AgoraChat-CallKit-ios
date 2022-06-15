@@ -472,10 +472,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [self clearRes];
                 break;
             case AgoraChatCallState_Outgoing:
+                [self muteAudio:NO];
                 [self refreshUIOutgoing];
                 break;
             case AgoraChatCallState_Alerting:
-                [AgoraChatCallManager.sharedManager muteAudio:NO];
+                [self muteAudio:NO];
                 [self refreshUIAlerting];
                 break;
             case AgoraChatCallState_Answering:
@@ -527,15 +528,15 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     
     AgoraChatType chatType = isGroup ? AgoraChatTypeGroupChat : AgoraChatTypeChat;
     AgoraChatMessageBody *msgBody;
-    if (aType == AgoraChatCallType1v1Video || aType == AgoraChatCallType1v1Audio || isGroup) {
+//    if (aType == AgoraChatCallType1v1Video || aType == AgoraChatCallType1v1Audio || isGroup) {
         NSString *strType = AgoraChatCallLocalizableString(@"StartAudioCall", nil);
-        if (aType == AgoraChatCallTypeMultiVideo || aType == AgoraChatCallType1v1Video) {
-            strType = AgoraChatCallLocalizableString(@"StartVideoCall", nil);
-        }
+//        if (aType == AgoraChatCallTypeMultiVideo || aType == AgoraChatCallType1v1Video) {
+//            strType = AgoraChatCallLocalizableString(@"StartVideoCall", nil);
+//        }
         msgBody = [[AgoraChatTextMessageBody alloc] initWithText:strType];
-    } else {
-        msgBody = [[AgoraChatCmdMessageBody alloc] initWithAction:@"rtcCall"];
-    }
+//    } else {
+//        msgBody = [[AgoraChatCmdMessageBody alloc] initWithAction:@"rtcCall"];
+//    }
     
     NSMutableDictionary *ext = [@{
         kMsgType:kMsgTypeValue,
