@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
     s.version          = '1.0.0'
     s.summary          = 'A AgoraChat Call UIKit'
     s.description      = <<-DESC
-        ‘‘一套使用AgoraChat以及声网RTC实现音视频呼叫的UI库，可以实现单人语音、视频呼叫，以及多人音视频通话’’
+        ‘‘AgoraChatCallKit is a UI library that implements audio and video calls by using Agora Chat and Agora RTC. Using this SDK, you can make one-to-one audio and video calls and multi-party audio and video calls.’’
     DESC
     s.homepage = 'https://www.easemob.com'
     s.license          = 'MIT'
