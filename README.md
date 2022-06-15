@@ -69,8 +69,8 @@ end
 
 | Key | Type | Value|  
 | ---- | ---- | ---- |
-| Privacy - Microphone Usage Description | String | 描述信息，如“环信需要使用您的麦克风”。 |  
-| Privacy - Camera Usage Description | String | 描述信息，如“环信需要使用您的摄像头” 。 |  
+| Privacy - Microphone Usage Description | String | 描述信息，如“AgoraChat需要使用您的麦克风”。 |  
+| Privacy - Camera Usage Description | String | 描述信息，如“AgoraChat需要使用您的摄像头” 。 |  
 
 如果希望在后台运行，还需要添加后台运行音视频权限，在`info.plist`文件中，点击`+`图标，添加`Required background modes`，`Type`为`Array`，在`Array`下添加元素`App plays audio or streams audio/video using AirPlay`。  
 如果要使用苹果的`PushKit`以及`CallKit`服务，还需要在`Background Modes`下勾选`Voice over IP`。
