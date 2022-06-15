@@ -293,16 +293,6 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 
 /**
  * \~chinese
- * 根据邀请消息加入通话。
- *
- * \~english
- * Clears resources related to each call.
- *
- */
-- (void)joinToMutleCall:(nonnull AgoraChatMessage *)callMessage;
-
-/**
- * \~chinese
  * 清除所有通话相关的资源。
  *
  * \~english
