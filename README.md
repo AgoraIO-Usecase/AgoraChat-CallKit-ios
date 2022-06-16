@@ -6,7 +6,7 @@ Built upon Agora RTC, `AgoraChatCallKit` is a UI library that uses Agora Chat as
 
 ## Run through the demo 
 
-`AgoraChatCallKit` is integrated in the Agora Chat demo. You can download the iOS demo on the [Agora Chat demo download page](https://www.easemob.com/download/im|) or from our [open-source repository](https://github.com/AgoraIO-Usecase/AgoraChat-ios) on Github.
+`AgoraChatCallKit` is integrated in the Agora Chat demo. You can download the iOS demo from our [open-source repository](https://github.com/AgoraIO-Usecase/AgoraChat-ios) on Github.
 
 ### Install the required SDKs and `AgoraChatCallKit`
 
