@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
     s.source           = { :git => 'https://github.com/AgoraIO-Usecase/AgoraChat-CallKit-ios.git', :tag => s.version.to_s }
     s.frameworks = 'UIKit'
     s.libraries = 'stdc++'
-    s.ios.deployment_target = '10.0'
+    s.ios.deployment_target = '11.0'
     s.source_files = 'Classes/**/*.{h,m}'
     s.public_header_files = [
       'Classes/Process/AgoraChatCallManager.h',
@@ -32,4 +32,9 @@ Pod::Spec.new do |s|
     s.dependency 'Masonry'
     s.dependency 'AgoraRtcEngine_iOS/RtcBasic','3.6.3'
     s.dependency 'SDWebImage'
+    
+    s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64',
+                              'VALID_ARCHS' => 'arm64 armv7 x86_64'
+                            }
+    s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
 end

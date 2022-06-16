@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <AgoraRtcKit/AgoraRtcEngineKit.h>
+@import AgoraRtcKit;
 
 NS_ASSUME_NONNULL_BEGIN
 

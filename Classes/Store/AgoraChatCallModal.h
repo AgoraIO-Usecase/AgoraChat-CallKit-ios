@@ -8,7 +8,6 @@
 
 #import <Foundation/Foundation.h>
 #import "AgoraChatCallDefine.h"
-#import <AgoraRtcKit/AgoraRtcEngineKit.h>
 
 /**
  *  \~chinese

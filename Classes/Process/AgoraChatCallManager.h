@@ -7,13 +7,10 @@
 //
 
 @import Foundation;
-@import AgoraRtcKit;
 @import CallKit;
 #import "AgoraChatCallConfig.h"
 #import "AgoraChatCallDefine.h"
 #import "AgoraChatCallError.h"
-@class AgoraChatMessage;
-
 @class AgoraChatMessage;
 
 extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
