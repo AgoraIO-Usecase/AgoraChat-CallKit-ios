@@ -1,0 +1,23 @@
+/* 
+  Localizable.strings
+  Pods
+
+  Created by lixiaoming on 2021/12/2.
+  
+*/
+"voice" = "语音";
+"conferenece" = "多人视频";
+"confereneceAudio" = "多人语音";
+"video" = "视频";
+"inviteInfo" = "邀请您进行%@通话";
+"calling" = "等待接听...";
+"AudioCall" = "语音通话";
+"VideoCall" = "视频通话";
+"MultiAudioCall" = "多人语音通话";
+"MultiVideoCall" = "多人视频通话";
+"NoAnswer" = "对方未应答";
+"StartAudioCall" = "开启语音通话";
+"StartVideoCall" = "开启视频通话";
+"Redial" = "重拨";
+"Close" = "关闭";
+"OngoingCall" = "通话中";

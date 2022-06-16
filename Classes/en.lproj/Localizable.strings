@@ -1,0 +1,23 @@
+/* 
+  Localizable.strings
+  Pods
+
+  Created by lixiaoming on 2021/12/2.
+  
+*/
+"audio" = "audio";
+"conferenece" = " video conferenece";
+"confereneceAudio" = "audio conferenece";
+"video" = "video";
+"inviteInfo" = "Invite you to a %@ call";
+"calling" = "Calling...";
+"AudioCall" = "Audio Call";
+"VideoCall" = "Video Call";
+"MultiAudioCall" = "Multi Audio Call";
+"MultiVideoCall" = "Multi Vidio Call";
+"NoAnswer" = "No Answer";
+"StartAudioCall" = "Start a voice call";
+"StartVideoCall" = "Start a video call";
+"Redial" = "Redial";
+"Close" = "Close";
+"OngoingCall" = "Ongoing Call";
