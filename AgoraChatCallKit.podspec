@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
     s.source           = { :git => 'https://github.com/AgoraIO-Usecase/AgoraChat-CallKit-ios.git', :tag => s.version.to_s }
     s.frameworks = 'UIKit'
     s.libraries = 'stdc++'
-    s.ios.deployment_target = '11.0'
+    s.ios.deployment_target = '10.0'
     s.source_files = 'Classes/**/*.{h,m}'
     s.public_header_files = [
       'Classes/Process/AgoraChatCallManager.h',
