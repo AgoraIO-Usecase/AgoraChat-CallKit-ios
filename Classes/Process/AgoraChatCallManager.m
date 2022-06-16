@@ -15,6 +15,7 @@
 #import "AgoraChatCallLocalizable.h"
 #import "AgoraChatCallManager+CallKit.h"
 #import "UIWindow+AgoraChatCallKit.h"
+#import <AgoraRtcKit/AgoraRtcEngineKit.h>
 
 @import CommonCrypto;
 @import AudioToolbox;

@@ -7,7 +7,6 @@
 //
 
 #import "AgoraChatCallConfig.h"
-
 #import "UIImage+Ext.h"
 
 @implementation AgoraChatCallUser
