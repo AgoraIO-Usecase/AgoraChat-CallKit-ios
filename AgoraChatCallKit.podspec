@@ -1,14 +1,14 @@
 Pod::Spec.new do |s|
     s.name             = 'AgoraChatCallKit'
-    s.version          = '1.0.0'
+    s.version          = '1.0.1'
     s.summary          = 'A AgoraChat Call UIKit'
     s.description      = <<-DESC
         ‘‘AgoraChatCallKit is a UI library that implements audio and video calls by using Agora Chat and Agora RTC. Using this SDK, you can make one-to-one audio and video calls and multi-party audio and video calls.’’
     DESC
-    s.homepage = 'https://www.easemob.com'
+    s.homepage         = 'https://github.com/AgoraIO-Usecase/AgoraChat-CallKit-ios'
     s.license          = 'MIT'
-    s.author           = { 'easemob' => 'dev@easemob.com' }
-    s.source           = { :git => 'https://github.com/374139544/AgoraChatCallKit.git', :tag => s.version.to_s }
+    s.author           = { 'agora' => 'dev@agora.com' }
+    s.source           = { :git => 'https://github.com/AgoraIO-Usecase/AgoraChat-CallKit-ios.git', :tag => s.version.to_s }
     s.frameworks = 'UIKit'
     s.libraries = 'stdc++'
     s.ios.deployment_target = '10.0'
