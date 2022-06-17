@@ -503,7 +503,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
         for (AgoraChatMessage *msg in aMessages) {
-            [weakself _parseMsg:msg];
+            if (msg.chatType == AgoraChatTypeChat) {
+                [weakself _parseMsg:msg];
+            }
         }
     });
 }
@@ -513,7 +515,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
         for (AgoraChatMessage *msg in aCmdMessages) {
-            [weakself _parseMsg:msg];
+            if (msg.chatType == AgoraChatTypeChat) {
+                [weakself _parseMsg:msg];
+            }
         }
     });
 }
@@ -524,6 +528,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)sendInviteMsgToCallee:(NSString*)aUid isGroup:(BOOL)isGroup type:(AgoraChatCallType)aType callId:(NSString*)aCallId channelName:(NSString*)aChannelName ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,AgoraChatCallError*))aCompletionBlock
 {
     if (aUid.length == 0 || aCallId.length == 0 || aChannelName.length == 0) {
+        return;
+    }
+    
+    if (!isGroup && [aUid isEqualToString:AgoraChatClient.sharedClient.currentUsername]) {
         return;
     }
     
