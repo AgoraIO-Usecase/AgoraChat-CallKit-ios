@@ -20,7 +20,6 @@
 @import CommonCrypto;
 @import AudioToolbox;
 @import AVFoundation;
-@import PushKit;
 
 static NSString* kAction = @"action";
 static NSString* kChannelName = @"channelName";
@@ -51,7 +50,7 @@ static NSString* kExt = @"ext";
 
 NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD = @"AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD";
 
-@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate, PKPushRegistryDelegate>
+@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate>
 
 @property (nonatomic,strong) AgoraChatCallConfig* config;
 @property (nonatomic,weak) id<AgoraChatCallDelegate> delegate;
@@ -110,9 +109,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self initCallKit];
     
     if (AgoraChatCallManager.sharedManager.getAgoraChatCallConfig.enableIosCallKit) {
-        PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
-        pushKit.delegate = self;
-        pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
+        [self requestPushKitToken];
     }
 }
 
@@ -557,6 +554,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if (!isGroup) {
         ext[@"em_push_ext"] = @{
             @"type": @"call",
+            @"custom": @{
+                @"callId": aCallId,
+            }
         };
         ext[@"em_apns_ext"] = @{
             @"em_push_type": @"voip",
@@ -787,6 +787,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         } else {
             [weakself.modal.recvCalls removeObjectForKey:callId];
             [weakself _stopAlertTimer:callId];
+            [weakself didRecvCancelMessage:callId];
         }
     };
     void (^parseAnswerMsgExt)(NSDictionary *) = ^void (NSDictionary *ext) {
@@ -1502,42 +1503,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             [self fetchToken];
         });
     }];
-}
-
-#pragma mark - PKPushRegistryDelegate
-- (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type
-{
-    [AgoraChatClient.sharedClient registerPushKitToken:pushCredentials.token completion:^(AgoraChatError *aError) {
-        if (aError) {
-            NSLog(@"AgoraChatClient registerPushKitToken error: %@", aError.description);
-        }
-    }];
-}
-
-- (void)pushRegistry:(PKPushRegistry *)registry didInvalidatePushTokenForType:(PKPushType)type
-{
-    NSLog(@"PushKit %s type=%d", __FUNCTION__, type);
-}
-
-- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(void (^)(void))completion
-{
-    _callKitCurrentCallUUID = NSUUID.UUID;
-    _callKitCurrentCallReportNewIncoming = YES;
-    NSString *from = payload.dictionaryPayload[@"f"];
-    CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:from];
-    CXCallUpdate *update = [[CXCallUpdate alloc] init];
-    update.remoteHandle = handle;
-    update.supportsHolding = NO;
-    update.supportsGrouping = NO;
-    update.supportsUngrouping = NO;
-    update.supportsDTMF = NO;
-    update.hasVideo = NO;
-    update.localizedCallerName = from;
-    
-    [self.provider reportNewIncomingCallWithUUID:_callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
-        NSLog(@"%@", error);
-    }];
-    completion();
 }
 
 @end
