@@ -95,12 +95,7 @@
     }];
     
     [self.contentView addSubview:self.localView];
-    if (self.callState == AgoraChatCallState_Answering) {
-        [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
-    } else {
-        [AgoraChatCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
-    }
-    
+    [self setupLocalVideo];
     [self updatePos];
 }
 
@@ -205,7 +200,9 @@
             [self updateStreamViewLayout];
         }
     }
-    [self setupLocalVideo];
+    if (self.callType == AgoraChatCallType1v1Video) {
+        [self setupLocalVideo];
+    }
     [_remoteView update];
     [_localView update];
     
@@ -568,6 +565,10 @@
 
 - (void)setupLocalVideo
 {
+    if (self.callType != AgoraChatCallType1v1Video) {
+        [AgoraChatCallManager.sharedManager muteLocalVideoStream:YES];
+        return;
+    }
     if (self.callState == AgoraChatCallState_Answering) {
         if (self.localView) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
