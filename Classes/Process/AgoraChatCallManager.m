@@ -68,6 +68,8 @@ NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD = @"AGORA_CHAT_
 @property (nonatomic,strong) AgoraChatCallBaseViewController *callVC;
 @property (nonatomic) BOOL bNeedSwitchToVoice;
 
+@property (nonatomic, strong) NSString *iosCallKitAcceptCallId;
+
 @end
 
 @implementation AgoraChatCallManager
@@ -327,6 +329,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     self.modal.currentCall = nil;
     [self.modal.recvCalls removeAllObjects];
     self.bNeedSwitchToVoice = NO;
+    
+    // 通话结束后，重置麦克风状态
+    [self muteAudio:NO];
 }
 
 - (void)refreshUIOutgoing
@@ -472,14 +477,20 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 }
                 [self clearRes];
                 break;
-            case AgoraChatCallState_Outgoing:
-                [self muteAudio:NO];
+            case AgoraChatCallState_Outgoing: {
                 [self refreshUIOutgoing];
+                AgoraChatCallType callType = self.modal.currentCall.callType;
+                BOOL speakOut = callType == AgoraChatCallType1v1Video || AgoraChatCallTypeMultiVideo;
+                [self speakeOut: speakOut];
                 break;
-            case AgoraChatCallState_Alerting:
-                [self muteAudio:NO];
+            }
+            case AgoraChatCallState_Alerting: {
                 [self refreshUIAlerting];
+                AgoraChatCallType callType = self.modal.currentCall.callType;
+                BOOL speakOut = callType == AgoraChatCallType1v1Video || AgoraChatCallTypeMultiVideo;
+                [self speakeOut: speakOut];
                 break;
+            }
             case AgoraChatCallState_Answering:
                 [self refreshUIAnswering];
                 break;
@@ -855,6 +866,17 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                     [weakself.modal.recvCalls removeAllObjects];
                     [weakself _stopAllAlertTimer];
                     weakself.modal.state = AgoraChatCallState_Alerting;
+                    AgoraChatCallKitModel *model = [self getUnhandleCall];
+                    if (model.handleType == AgoraChatCallKitModelHandleTypeAccept) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self acceptAction];
+                        });
+                    } else if (model.handleType == AgoraChatCallKitModelHandleTypeRefuse) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self hangupAction];
+                        });
+                    }
+                    [self clearUnhandleCall];
                 }
                 [weakself.modal.recvCalls removeObjectForKey:callId];
             }
@@ -1332,6 +1354,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self sendAnswerMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId result:kAcceptResult devId:self.modal.currentCall.remoteCallDevId];
 }
 
+- (BOOL)checkCallIdCanHandle:(NSString *)callId
+{
+    return [self.modal.currentCall.callId isEqualToString:callId];
+}
+
 - (void)switchCameraAction
 {
     [self.agoraKit switchCamera];
@@ -1352,7 +1379,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)muteAudio:(BOOL)muted
 {
     [self.agoraKit muteLocalAudioStream:muted];
-    [self.agoraKit enableLocalAudio:!muted];
     [self.callVC didMuteAudio:muted];
 }
 
@@ -1360,6 +1386,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     [self.agoraKit setEnableSpeakerphone:enable];
     [self.callVC didSpeakeOut:enable];
+}
+
+- (BOOL)speakeOut
+{
+    return [self.agoraKit isSpeakerphoneEnabled];
 }
 
 - (NSString *)getNicknameByUserName:(NSString*)aUserName
@@ -1423,10 +1454,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit setupLocalVideo:canvas];
         [self.agoraKit enableVideo];
         [self.agoraKit startPreview];
-        [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
-        [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
     } else {
-        [self.agoraKit disableVideo];
         [self.agoraKit stopPreview];
     }
 }
@@ -1449,7 +1477,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [weakself muteLocalVideoStream:YES];
             }
         }];
-        [weakself speakeOut:NO];
     });
 }
 

@@ -14,8 +14,8 @@
 @import AgoraChat;
 
 static NSUUID *callKitCurrentCallUUID;
-static NSString *agoraCallId;
 static NSString *pushKitRecvCallId;
+static AgoraChatCallKitModel *callKitModel;
 
 @implementation AgoraChatCallManager (CallKit)
 
@@ -127,17 +127,23 @@ static NSString *pushKitRecvCallId;
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
 {
     if ([callKitCurrentCallUUID isEqual:action.callUUID]) {
-        [self acceptAction];
+        if (callKitModel && ![self checkCallIdCanHandle:callKitModel.unhandleCallId]) {
+            callKitModel.handleType = AgoraChatCallKitModelHandleTypeAccept;
+        } else {
+            [self acceptAction];
+        }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [action fulfill];
-    });
+    [action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action
 {
     if ([callKitCurrentCallUUID isEqual:action.callUUID]) {
-        [self hangupAction];
+        if (callKitModel && ![self checkCallIdCanHandle:callKitModel.unhandleCallId]) {
+            callKitModel.handleType = AgoraChatCallKitModelHandleTypeRefuse;
+        } else {
+            [self hangupAction];
+        }
     }
     [action fulfill];
 }
@@ -186,11 +192,38 @@ static NSString *pushKitRecvCallId;
     update.localizedCallerName = from;
     
     pushKitRecvCallId = callId;
+    callKitModel = [[AgoraChatCallKitModel alloc] init];
+    callKitModel.unhandleCallId = callId;
+    callKitModel.handleType = AgoraChatCallKitModelHandleTypeUnhandle;
+    __weak typeof(self)weakSelf = self;
+    callKitModel.timeoutBlock = dispatch_block_create(0, ^{
+        [weakSelf reportCallEndWithReason:CXCallEndedReasonUnanswered];
+    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10 * NSEC_PER_SEC)), dispatch_get_main_queue(), callKitModel.timeoutBlock);
+    
     callKitCurrentCallUUID = NSUUID.UUID;
     [self.provider reportNewIncomingCallWithUUID:callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
         NSLog(@"%@", error);
     }];
     completion();
+}
+
+- (AgoraChatCallKitModel *)getUnhandleCall
+{
+    if (callKitModel && callKitModel.handleType != AgoraChatCallKitModelHandleTypeUnhandle) {
+        return callKitModel;
+    }
+    [self clearUnhandleCall];
+    return nil;
+}
+
+- (void)clearUnhandleCall
+{
+    if (callKitModel.timeoutBlock) {
+        dispatch_block_cancel(callKitModel.timeoutBlock);
+        callKitModel.timeoutBlock = nil;
+    }
+    callKitModel = nil;
 }
 
 @end

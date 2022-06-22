@@ -16,6 +16,7 @@
 - (void)inviteAction;
 - (void)muteAudio:(BOOL)muted;
 - (void)speakeOut:(BOOL)enable;
+- (BOOL)speakeOut;
 - (NSString *)getNicknameByUserName:(NSString *)aUserName;
 - (NSURL *)getHeadImageByUserName:(NSString *)aUserName;
 - (NSString *)getUserNameByUid:(NSNumber *)uId;
@@ -25,5 +26,6 @@
 - (void)setupRemoteVideoView:(NSUInteger)uid withDisplayView:(UIView *)view;
 - (void)joinChannel;
 - (void)switchToVoice;
+- (BOOL)checkCallIdCanHandle:(NSString *)callId;
 
 @end /* AgoraChatCallManager_Private_h */

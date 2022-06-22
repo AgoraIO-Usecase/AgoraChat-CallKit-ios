@@ -309,13 +309,6 @@
     }
 }
 
-- (void)timeTalkingAction:(id)sender
-{
-    _voiceStatusView.hidden = YES;
-    _model.isTalking = NO;
-    _speakingView.hidden = !_model.isTalking;
-}
-
 #pragma mark - UITapGestureRecognizer
 
 - (void)handleTapAction:(UITapGestureRecognizer *)aTap

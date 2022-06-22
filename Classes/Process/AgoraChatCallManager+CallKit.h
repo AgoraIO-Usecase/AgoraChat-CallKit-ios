@@ -6,6 +6,8 @@
 //
 
 #import "AgoraChatCallManager.h"
+#import "AgoraChatCallKitModel.h"
+
 @import PushKit;
 @class AgoraChatCall;
 
@@ -19,6 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)reportNewIncomingCall:(AgoraChatCall *)call;
 - (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason;
+
+- (AgoraChatCallKitModel *)getUnhandleCall;
+- (void)clearUnhandleCall;
 
 @end
 
