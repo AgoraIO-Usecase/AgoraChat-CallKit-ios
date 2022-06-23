@@ -102,6 +102,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
         [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
         [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 report_vad:NO];
+        
+        AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
+        cameraConfig.cameraDirection = AgoraCameraDirectionFront;
+        [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
+            
     }
     
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
@@ -332,6 +337,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     
     // 通话结束后，重置麦克风状态
     [self muteAudio:NO];
+    // 通话结束后，重置摄像头
+    AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
+    cameraConfig.cameraDirection = AgoraCameraDirectionFront;
+    [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
 }
 
 - (void)refreshUIOutgoing
@@ -1442,10 +1451,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)setupLocalVideo:(UIView *)displayView
 {
     if (displayView) {
-        AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
-        cameraConfig.cameraDirection = AgoraCameraDirectionFront;
-        [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
-        
         [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
         AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
         canvas.uid = 0;
@@ -1473,9 +1478,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             }
             weakself.modal.hasJoinedChannel = YES;
             [weakself.modal.currentCall.allUserAccounts setObject:AgoraChatClient.sharedClient.currentUsername forKey:@(uid)];
-            if (weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo) {
-                [weakself muteLocalVideoStream:YES];
-            }
         }];
     });
 }
