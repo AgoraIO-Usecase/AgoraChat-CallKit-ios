@@ -1235,6 +1235,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 // 对方发视频流
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteVideoDecodedOfUid:(NSUInteger)uid size:(CGSize)size elapsed:(NSInteger)elapsed
 {
+    if (self.modal.currentCall.callType == AgoraChatCallType1v1Video) {
+        [[self getSingleVC] setRemoteEnableVideo:YES];
+    }
     [self.callVC setupRemoteVideoView:uid size:size];
 }
 

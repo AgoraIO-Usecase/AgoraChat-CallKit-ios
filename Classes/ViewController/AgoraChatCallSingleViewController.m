@@ -479,6 +479,13 @@
 
 - (void)updateStreamViewLayout
 {
+    BOOL isConnected = self.callState == AgoraChatCallState_Answering;
+    if (!isConnected) {
+        [_localView update];
+        [_remoteView update];
+        return;
+    }
+    
     AgoraChatCallStreamView *bigView = _remoteView;
     if (_remoteView.model.enableVideo) {
         _localView.hidden = NO;
@@ -520,7 +527,13 @@
 - (void)enableVideoAction
 {
     [super enableVideoAction];
+    BOOL isConnected = self.callState == AgoraChatCallState_Answering;
     _localView.model.enableVideo = !self.enableCameraButton.isSelected;
+    // 因为未接听状态 使用对方的页面显示的自己的视频，所以同时修改对方页面的属性
+    if (!isConnected) {
+        _remoteView.model.enableVideo = !self.enableCameraButton.isSelected;
+    }
+    
     [self updateStreamViewLayout];
 }
 
@@ -573,7 +586,7 @@
         if (self.localView) {
             [AgoraChatCallManager.sharedManager setupLocalVideo:_localView.displayView];
         }
-        [AgoraChatCallManager.sharedManager muteLocalVideoStream:NO];
+        [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
     } else {
         [AgoraChatCallManager.sharedManager setupLocalVideo:_remoteView.displayView];
     }

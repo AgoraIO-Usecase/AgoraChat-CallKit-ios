@@ -127,6 +127,8 @@
 
 - (void)update
 {
+    [self.contentView bringSubviewToFront:_voiceStatusView];
+    [self.contentView bringSubviewToFront:_videoStatusView];
     if (!_model.enableVoice) {
         _model.isTalking = NO;
     }
