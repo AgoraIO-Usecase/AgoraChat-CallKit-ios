@@ -83,7 +83,7 @@
     
     [self setupSubViews];
     [self _refreshViewPos];
-    [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected];
+    [AgoraChatCallManager.sharedManager muteLocalVideoStream:self.enableCameraButton.selected || self.callType == AgoraChatCallTypeMultiAudio];
 }
 
 - (void)setupSubViews

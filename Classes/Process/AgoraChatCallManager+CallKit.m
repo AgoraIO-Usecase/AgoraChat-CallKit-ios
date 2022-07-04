@@ -11,6 +11,11 @@
 #import "UIImage+Ext.h"
 
 @import CallKit;
+@import AgoraChat;
+
+static NSUUID *callKitCurrentCallUUID;
+static NSString *pushKitRecvCallId;
+static AgoraChatCallKitModel *callKitModel;
 
 @implementation AgoraChatCallManager (CallKit)
 
@@ -33,12 +38,26 @@
     self.callController = [[CXCallController alloc] initWithQueue:dispatch_get_main_queue()];
 }
 
+- (void)requestPushKitToken
+{
+    PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
+    pushKit.delegate = self;
+    pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
+}
+
+- (void)didRecvCancelMessage:(NSString *)callId
+{
+    if ([callId isEqualToString:pushKitRecvCallId]) {
+        [self reportCallEndWithReason:CXCallEndedReasonUnanswered];
+    }
+}
+
 - (void)reportNewIncomingCall:(AgoraChatCall *)call
 {
     if (![self getAgoraChatCallConfig].enableIosCallKit) {
         return;
     }
-    if (self.callKitCurrentCallReportNewIncoming) {
+    if (pushKitRecvCallId) {
         return;
     }
     CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:call.remoteUserAccount];
@@ -50,12 +69,12 @@
     update.supportsDTMF = NO;
     update.hasVideo = NO;
     update.localizedCallerName = call.remoteUserAccount;
-    if (self.callKitCurrentCallUUID) {
-        [self.provider reportCallWithUUID:self.callKitCurrentCallUUID endedAtDate:nil reason:CXCallEndedReasonUnanswered];
+    if (callKitCurrentCallUUID) {
+        [self.provider reportCallWithUUID:callKitCurrentCallUUID endedAtDate:nil reason:CXCallEndedReasonUnanswered];
     }
     
-    self.callKitCurrentCallUUID = [NSUUID UUID];
-    [self.provider reportNewIncomingCallWithUUID:self.callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
+    callKitCurrentCallUUID = [NSUUID UUID];
+    [self.provider reportNewIncomingCallWithUUID:callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
         NSLog(@"%@", error);
     }];
 }
@@ -65,7 +84,7 @@
     if (![self getAgoraChatCallConfig].enableIosCallKit) {
         return;
     }
-    if (!self.callKitCurrentCallUUID) {
+    if (!callKitCurrentCallUUID) {
         return;
     }
     CXCallEndedReason callKitReason;
@@ -83,10 +102,21 @@
             callKitReason = CXCallEndedReasonUnanswered;
             break;
     }
+    [self reportCallEndWithReason:callKitReason];
+}
+
+- (void)reportCallEndWithReason:(CXCallEndedReason)reason
+{
+    if (![self getAgoraChatCallConfig].enableIosCallKit) {
+        return;
+    }
+    if (!callKitCurrentCallUUID) {
+        return;
+    }
     
-    [self.provider reportCallWithUUID:self.callKitCurrentCallUUID endedAtDate:nil reason:callKitReason];
-    self.callKitCurrentCallUUID = nil;
-    self.callKitCurrentCallReportNewIncoming = NO;
+    [self.provider reportCallWithUUID:callKitCurrentCallUUID endedAtDate:nil reason:reason];
+    callKitCurrentCallUUID = nil;
+    pushKitRecvCallId = nil;
 }
 
 - (void)providerDidReset:(CXProvider *)provider
@@ -96,18 +126,24 @@
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action
 {
-    if ([self.callKitCurrentCallUUID isEqual:action.callUUID]) {
-        [self acceptAction];
+    if ([callKitCurrentCallUUID isEqual:action.callUUID]) {
+        if (callKitModel && ![self checkCallIdCanHandle:callKitModel.unhandleCallId]) {
+            callKitModel.handleType = AgoraChatCallKitModelHandleTypeAccept;
+        } else {
+            [self acceptAction];
+        }
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [action fulfill];
-    });
+    [action fulfill];
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action
 {
-    if ([self.callKitCurrentCallUUID isEqual:action.callUUID]) {
-        [self hangupAction];
+    if ([callKitCurrentCallUUID isEqual:action.callUUID]) {
+        if (callKitModel && ![self checkCallIdCanHandle:callKitModel.unhandleCallId]) {
+            callKitModel.handleType = AgoraChatCallKitModelHandleTypeRefuse;
+        } else {
+            [self hangupAction];
+        }
     }
     [action fulfill];
 }
@@ -124,5 +160,70 @@
 //    [self speakeOut:action.onHold];
 //    [action fulfill];
 //}
+
+#pragma mark - PKPushRegistryDelegate
+- (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type
+{
+    [AgoraChatClient.sharedClient registerPushKitToken:pushCredentials.token completion:^(AgoraChatError *aError) {
+        if (aError) {
+            NSLog(@"AgoraChatClient registerPushKitToken error: %@", aError.description);
+        }
+    }];
+}
+
+- (void)pushRegistry:(PKPushRegistry *)registry didInvalidatePushTokenForType:(PKPushType)type
+{
+    NSLog(@"PushKit %s type=%d", __FUNCTION__, type);
+}
+
+- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(void (^)(void))completion
+{
+    NSString *from = payload.dictionaryPayload[@"f"];
+    NSDictionary *custom = payload.dictionaryPayload[@"e"];
+    NSString *callId = custom[@"callId"];
+    CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:from];
+    CXCallUpdate *update = [[CXCallUpdate alloc] init];
+    update.remoteHandle = handle;
+    update.supportsHolding = NO;
+    update.supportsGrouping = NO;
+    update.supportsUngrouping = NO;
+    update.supportsDTMF = NO;
+    update.hasVideo = NO;
+    update.localizedCallerName = from;
+    
+    pushKitRecvCallId = callId;
+    callKitModel = [[AgoraChatCallKitModel alloc] init];
+    callKitModel.unhandleCallId = callId;
+    callKitModel.handleType = AgoraChatCallKitModelHandleTypeUnhandle;
+    __weak typeof(self)weakSelf = self;
+    callKitModel.timeoutBlock = dispatch_block_create(0, ^{
+        [weakSelf reportCallEndWithReason:CXCallEndedReasonUnanswered];
+    });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10 * NSEC_PER_SEC)), dispatch_get_main_queue(), callKitModel.timeoutBlock);
+    
+    callKitCurrentCallUUID = NSUUID.UUID;
+    [self.provider reportNewIncomingCallWithUUID:callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
+        NSLog(@"%@", error);
+    }];
+    completion();
+}
+
+- (AgoraChatCallKitModel *)getUnhandleCall
+{
+    if (callKitModel && callKitModel.handleType != AgoraChatCallKitModelHandleTypeUnhandle) {
+        return callKitModel;
+    }
+    [self clearUnhandleCall];
+    return nil;
+}
+
+- (void)clearUnhandleCall
+{
+    if (callKitModel.timeoutBlock) {
+        dispatch_block_cancel(callKitModel.timeoutBlock);
+        callKitModel.timeoutBlock = nil;
+    }
+    callKitModel = nil;
+}
 
 @end

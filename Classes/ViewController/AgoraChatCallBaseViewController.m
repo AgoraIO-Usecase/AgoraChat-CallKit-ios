@@ -158,6 +158,7 @@
     [_speakerButton setImage:[UIImage agoraChatCallKit_imageNamed:@"speaker_disable"] forState:UIControlStateNormal];
     [_speakerButton setImage:[UIImage agoraChatCallKit_imageNamed:@"speaker_enable"] forState:UIControlStateSelected];
     [_speakerButton addTarget:self action:@selector(speakerAction) forControlEvents:UIControlEventTouchUpInside];
+    _speakerButton.selected = AgoraChatCallManager.sharedManager.speakeOut;
     [_buttonView addSubview:_speakerButton];
     [_speakerButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.bottom.equalTo(_buttonView);
@@ -268,7 +269,6 @@
 {
     BOOL speakeOut = !self.speakerButton.isSelected;
     [AgoraChatCallManager.sharedManager speakeOut:speakeOut];
-    [self didSpeakeOut:speakeOut];
 }
 
 - (void)muteAction

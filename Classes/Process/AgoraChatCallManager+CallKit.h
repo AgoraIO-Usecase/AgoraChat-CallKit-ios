@@ -6,17 +6,24 @@
 //
 
 #import "AgoraChatCallManager.h"
+#import "AgoraChatCallKitModel.h"
 
+@import PushKit;
 @class AgoraChatCall;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface AgoraChatCallManager (CallKit) <CXProviderDelegate>
+@interface AgoraChatCallManager (CallKit) <CXProviderDelegate, PKPushRegistryDelegate>
 
 - (void)initCallKit;
+- (void)requestPushKitToken;
+- (void)didRecvCancelMessage:(NSString *)callId;
 
 - (void)reportNewIncomingCall:(AgoraChatCall *)call;
 - (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason;
+
+- (AgoraChatCallKitModel *)getUnhandleCall;
+- (void)clearUnhandleCall;
 
 @end
 

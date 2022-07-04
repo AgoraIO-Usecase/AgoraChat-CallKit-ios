@@ -20,7 +20,6 @@
 @import CommonCrypto;
 @import AudioToolbox;
 @import AVFoundation;
-@import PushKit;
 
 static NSString* kAction = @"action";
 static NSString* kChannelName = @"channelName";
@@ -51,7 +50,7 @@ static NSString* kExt = @"ext";
 
 NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD = @"AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD";
 
-@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate, PKPushRegistryDelegate>
+@interface AgoraChatCallManager ()<AgoraChatManagerDelegate,AgoraRtcEngineDelegate,AgoraChatCallModalDelegate>
 
 @property (nonatomic,strong) AgoraChatCallConfig* config;
 @property (nonatomic,weak) id<AgoraChatCallDelegate> delegate;
@@ -68,6 +67,8 @@ NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD = @"AGORA_CHAT_
 @property (nonatomic,weak) NSTimer* ringTimer;
 @property (nonatomic,strong) AgoraChatCallBaseViewController *callVC;
 @property (nonatomic) BOOL bNeedSwitchToVoice;
+
+@property (nonatomic, strong) NSString *iosCallKitAcceptCallId;
 
 @end
 
@@ -101,6 +102,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
         [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
         [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 report_vad:NO];
+        
+        AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
+        cameraConfig.cameraDirection = AgoraCameraDirectionFront;
+        [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
+            
     }
     
     AVAudioSession *audioSession = [AVAudioSession sharedInstance];
@@ -110,9 +116,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self initCallKit];
     
     if (AgoraChatCallManager.sharedManager.getAgoraChatCallConfig.enableIosCallKit) {
-        PKPushRegistry *pushKit = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
-        pushKit.delegate = self;
-        pushKit.desiredPushTypes = [NSSet setWithObjects:PKPushTypeVoIP, nil];
+        [self requestPushKitToken];
     }
 }
 
@@ -330,6 +334,13 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     self.modal.currentCall = nil;
     [self.modal.recvCalls removeAllObjects];
     self.bNeedSwitchToVoice = NO;
+    
+    // 通话结束后，重置麦克风状态
+    [self muteAudio:NO];
+    // 通话结束后，重置摄像头
+    AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
+    cameraConfig.cameraDirection = AgoraCameraDirectionFront;
+    [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
 }
 
 - (void)refreshUIOutgoing
@@ -475,14 +486,20 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 }
                 [self clearRes];
                 break;
-            case AgoraChatCallState_Outgoing:
-                [self muteAudio:NO];
+            case AgoraChatCallState_Outgoing: {
                 [self refreshUIOutgoing];
+                AgoraChatCallType callType = self.modal.currentCall.callType;
+                BOOL speakOut = callType == AgoraChatCallType1v1Video || AgoraChatCallTypeMultiVideo;
+                [self speakeOut: speakOut];
                 break;
-            case AgoraChatCallState_Alerting:
-                [self muteAudio:NO];
+            }
+            case AgoraChatCallState_Alerting: {
                 [self refreshUIAlerting];
+                AgoraChatCallType callType = self.modal.currentCall.callType;
+                BOOL speakOut = callType == AgoraChatCallType1v1Video || AgoraChatCallTypeMultiVideo;
+                [self speakeOut: speakOut];
                 break;
+            }
             case AgoraChatCallState_Answering:
                 [self refreshUIAnswering];
                 break;
@@ -506,7 +523,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
         for (AgoraChatMessage *msg in aMessages) {
-            [weakself _parseMsg:msg];
+            if (msg.chatType == AgoraChatTypeChat) {
+                [weakself _parseMsg:msg];
+            }
         }
     });
 }
@@ -516,7 +535,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
         for (AgoraChatMessage *msg in aCmdMessages) {
-            [weakself _parseMsg:msg];
+            if (msg.chatType == AgoraChatTypeChat) {
+                [weakself _parseMsg:msg];
+            }
         }
     });
 }
@@ -527,6 +548,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)sendInviteMsgToCallee:(NSString*)aUid isGroup:(BOOL)isGroup type:(AgoraChatCallType)aType callId:(NSString*)aCallId channelName:(NSString*)aChannelName ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,AgoraChatCallError*))aCompletionBlock
 {
     if (aUid.length == 0 || aCallId.length == 0 || aChannelName.length == 0) {
+        return;
+    }
+    
+    if (!isGroup && [aUid isEqualToString:AgoraChatClient.sharedClient.currentUsername]) {
         return;
     }
     
@@ -557,6 +582,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     if (!isGroup) {
         ext[@"em_push_ext"] = @{
             @"type": @"call",
+            @"custom": @{
+                @"callId": aCallId,
+            }
         };
         ext[@"em_apns_ext"] = @{
             @"em_push_type": @"voip",
@@ -787,6 +815,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         } else {
             [weakself.modal.recvCalls removeObjectForKey:callId];
             [weakself _stopAlertTimer:callId];
+            [weakself didRecvCancelMessage:callId];
         }
     };
     void (^parseAnswerMsgExt)(NSDictionary *) = ^void (NSDictionary *ext) {
@@ -846,6 +875,17 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                     [weakself.modal.recvCalls removeAllObjects];
                     [weakself _stopAllAlertTimer];
                     weakself.modal.state = AgoraChatCallState_Alerting;
+                    AgoraChatCallKitModel *model = [self getUnhandleCall];
+                    if (model.handleType == AgoraChatCallKitModelHandleTypeAccept) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self acceptAction];
+                        });
+                    } else if (model.handleType == AgoraChatCallKitModelHandleTypeRefuse) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self hangupAction];
+                        });
+                    }
+                    [self clearUnhandleCall];
                 }
                 [weakself.modal.recvCalls removeObjectForKey:callId];
             }
@@ -1195,6 +1235,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 // 对方发视频流
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteVideoDecodedOfUid:(NSUInteger)uid size:(CGSize)size elapsed:(NSInteger)elapsed
 {
+    if (self.modal.currentCall.callType == AgoraChatCallType1v1Video) {
+        [[self getSingleVC] setRemoteEnableVideo:YES];
+    }
     [self.callVC setupRemoteVideoView:uid size:size];
 }
 
@@ -1323,6 +1366,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self sendAnswerMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId result:kAcceptResult devId:self.modal.currentCall.remoteCallDevId];
 }
 
+- (BOOL)checkCallIdCanHandle:(NSString *)callId
+{
+    return [self.modal.currentCall.callId isEqualToString:callId];
+}
+
 - (void)switchCameraAction
 {
     [self.agoraKit switchCamera];
@@ -1343,7 +1391,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)muteAudio:(BOOL)muted
 {
     [self.agoraKit muteLocalAudioStream:muted];
-    [self.agoraKit enableLocalAudio:!muted];
     [self.callVC didMuteAudio:muted];
 }
 
@@ -1351,6 +1398,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 {
     [self.agoraKit setEnableSpeakerphone:enable];
     [self.callVC didSpeakeOut:enable];
+}
+
+- (BOOL)speakeOut
+{
+    return [self.agoraKit isSpeakerphoneEnabled];
 }
 
 - (NSString *)getNicknameByUserName:(NSString*)aUserName
@@ -1402,10 +1454,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)setupLocalVideo:(UIView *)displayView
 {
     if (displayView) {
-        AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
-        cameraConfig.cameraDirection = AgoraCameraDirectionFront;
-        [self.agoraKit setCameraCapturerConfiguration:cameraConfig];
-        
         [self.agoraKit setVideoEncoderConfiguration:self.config.encoderConfiguration];
         AgoraRtcVideoCanvas *canvas = [[AgoraRtcVideoCanvas alloc] init];
         canvas.uid = 0;
@@ -1414,10 +1462,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [self.agoraKit setupLocalVideo:canvas];
         [self.agoraKit enableVideo];
         [self.agoraKit startPreview];
-        [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
-        [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
     } else {
-        [self.agoraKit disableVideo];
         [self.agoraKit stopPreview];
     }
 }
@@ -1436,11 +1481,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             }
             weakself.modal.hasJoinedChannel = YES;
             [weakself.modal.currentCall.allUserAccounts setObject:AgoraChatClient.sharedClient.currentUsername forKey:@(uid)];
-            if (weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo) {
-                [weakself muteLocalVideoStream:YES];
-            }
         }];
-        [weakself speakeOut:NO];
     });
 }
 
@@ -1502,42 +1543,6 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             [self fetchToken];
         });
     }];
-}
-
-#pragma mark - PKPushRegistryDelegate
-- (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type
-{
-    [AgoraChatClient.sharedClient registerPushKitToken:pushCredentials.token completion:^(AgoraChatError *aError) {
-        if (aError) {
-            NSLog(@"AgoraChatClient registerPushKitToken error: %@", aError.description);
-        }
-    }];
-}
-
-- (void)pushRegistry:(PKPushRegistry *)registry didInvalidatePushTokenForType:(PKPushType)type
-{
-    NSLog(@"PushKit %s type=%d", __FUNCTION__, type);
-}
-
-- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(void (^)(void))completion
-{
-    _callKitCurrentCallUUID = NSUUID.UUID;
-    _callKitCurrentCallReportNewIncoming = YES;
-    NSString *from = payload.dictionaryPayload[@"f"];
-    CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:from];
-    CXCallUpdate *update = [[CXCallUpdate alloc] init];
-    update.remoteHandle = handle;
-    update.supportsHolding = NO;
-    update.supportsGrouping = NO;
-    update.supportsUngrouping = NO;
-    update.supportsDTMF = NO;
-    update.hasVideo = NO;
-    update.localizedCallerName = from;
-    
-    [self.provider reportNewIncomingCallWithUUID:_callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
-        NSLog(@"%@", error);
-    }];
-    completion();
 }
 
 @end

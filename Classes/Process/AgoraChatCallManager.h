@@ -142,8 +142,6 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
 
 @property (nonatomic, strong, nullable) CXProvider *provider;
 @property (nonatomic, strong, nullable) CXCallController *callController;
-@property (nonatomic, strong) NSUUID *callKitCurrentCallUUID;
-@property (nonatomic, assign) BOOL callKitCurrentCallReportNewIncoming;
 
 /**
  * \~chinese

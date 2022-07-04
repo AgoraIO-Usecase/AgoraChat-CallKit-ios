@@ -127,6 +127,8 @@
 
 - (void)update
 {
+    [self.contentView bringSubviewToFront:_voiceStatusView];
+    [self.contentView bringSubviewToFront:_videoStatusView];
     if (!_model.enableVoice) {
         _model.isTalking = NO;
     }
@@ -307,13 +309,6 @@
             make.right.bottom.equalTo(_avatarImageView);
         }];
     }
-}
-
-- (void)timeTalkingAction:(id)sender
-{
-    _voiceStatusView.hidden = YES;
-    _model.isTalking = NO;
-    _speakingView.hidden = !_model.isTalking;
 }
 
 #pragma mark - UITapGestureRecognizer
