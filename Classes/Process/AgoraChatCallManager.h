@@ -41,7 +41,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  *                      - `EaseCallTypeMultiVoice`: The multi-party voice call.
  *                      - `EaseCallTypeMultiVideo`: The multi-party video call.
  */
-- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoarChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
+- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoraChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
 /**
  * \~chinese
  * 多人通话中的成员邀请其他用户时触发的回调。

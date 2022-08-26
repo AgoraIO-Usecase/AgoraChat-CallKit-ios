@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didRecvCancelMessage:(NSString *)callId;
 
 - (void)reportNewIncomingCall:(AgoraChatCall *)call;
-- (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason;
+- (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoraChatCallEndReason)reason;
 
 - (AgoraChatCallKitModel *)getUnhandleCall;
 - (void)clearUnhandleCall;
