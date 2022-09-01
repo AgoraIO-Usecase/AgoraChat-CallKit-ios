@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name             = 'AgoraChatCallKit'
-    s.version          = '1.0.6'
+    s.version          = '1.0.7'
     s.summary          = 'A AgoraChat Call UIKit'
     s.description      = <<-DESC
         ‘‘AgoraChatCallKit is a UI library that implements audio and video calls by using Agora Chat and Agora RTC. Using this SDK, you can make one-to-one audio and video calls and multi-party audio and video calls.’’
