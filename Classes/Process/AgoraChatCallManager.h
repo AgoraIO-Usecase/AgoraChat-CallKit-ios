@@ -41,7 +41,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  *                      - `EaseCallTypeMultiVoice`: The multi-party voice call.
  *                      - `EaseCallTypeMultiVideo`: The multi-party video call.
  */
-- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoarChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
+- (void)callDidEnd:(NSString*_Nonnull)aChannelName reason:(AgoraChatCallEndReason)aReason time:(int)aTm type:(AgoraChatCallType)aType;
 /**
  * \~chinese
  * 多人通话中的成员邀请其他用户时触发的回调。
@@ -204,7 +204,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  *                           - If success, the call ID is returned.
  *                           - If a failure occurs, an error is returned. See {@link AgoraChatCallError}.
  */
-- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers groupId:(NSString *)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
+- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers groupId:(NSString *_Nonnull)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
 
 /**
  * \~chinese

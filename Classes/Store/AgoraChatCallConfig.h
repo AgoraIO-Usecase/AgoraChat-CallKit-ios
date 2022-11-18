@@ -36,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property (nonatomic,strong)  NSURL* _Nullable  headImage;
 
-+ (instancetype)userWithNickName:(NSString *)aNickName image:(NSURL *)aUrl;
++ (instancetype)userWithNickName:(nullable NSString *)aNickName image:(nullable NSURL *)aUrl;
 
 @end
 

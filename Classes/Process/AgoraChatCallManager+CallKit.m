@@ -79,7 +79,7 @@ static AgoraChatCallKitModel *callKitModel;
     }];
 }
 
-- (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoarChatCallEndReason)reason
+- (void)reportCallEnd:(AgoraChatCall *)call reason:(AgoraChatCallEndReason)reason
 {
     if (![self getAgoraChatCallConfig].enableIosCallKit) {
         return;
@@ -89,13 +89,13 @@ static AgoraChatCallKitModel *callKitModel;
     }
     CXCallEndedReason callKitReason;
     switch (reason) {
-        case AgoarChatCallEndReasonHangup:
+        case AgoraChatCallEndReasonHangup:
             callKitReason = CXCallEndedReasonRemoteEnded;
             break;
-        case AgoarChatCallEndReasonAnswerOtherDevice:
+        case AgoraChatCallEndReasonAnswerOtherDevice:
             callKitReason = CXCallEndedReasonAnsweredElsewhere;
             break;
-        case AgoarChatCallEndReasonRefuseOtherDevice:
+        case AgoraChatCallEndReasonRefuseOtherDevice:
             callKitReason = CXCallEndedReasonAnsweredElsewhere;
             break;
         default:
