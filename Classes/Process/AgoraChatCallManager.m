@@ -137,8 +137,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)setUsers:(NSDictionary<NSNumber*,NSString*>*_Nonnull)aUsers channelName:(NSString*)aChannel
 {
     if (aUsers.count > 0 && self.modal.currentCall && [self.modal.currentCall.channelName isEqualToString:aChannel]) {
-        self.modal.currentCall.allUserAccounts = [aUsers mutableCopy];
-        [self.callVC usersInfoUpdated];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.modal.currentCall.allUserAccounts = [aUsers mutableCopy];
+            [self.callVC usersInfoUpdated];
+        });
     }
 }
 

@@ -204,7 +204,7 @@ extern NSNotificationName const AGORA_CHAT_CALL_KIT_COMMMUNICATE_RECORD;
  *                           - If success, the call ID is returned.
  *                           - If a failure occurs, an error is returned. See {@link AgoraChatCallError}.
  */
-- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers groupId:(NSString *)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
+- (void)startInviteUsers:(NSArray<NSString*>*_Nonnull)aUsers groupId:(NSString *_Nonnull)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary*_Nullable)aExt  completion:(void (^_Nullable)(NSString*_Nullable callId,AgoraChatCallError*_Nullable aError))aCompletionBlock;
 
 /**
  * \~chinese
