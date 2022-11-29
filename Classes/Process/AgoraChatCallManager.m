@@ -137,8 +137,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)setUsers:(NSDictionary<NSNumber*,NSString*>*_Nonnull)aUsers channelName:(NSString*)aChannel
 {
     if (aUsers.count > 0 && self.modal.currentCall && [self.modal.currentCall.channelName isEqualToString:aChannel]) {
-        self.modal.currentCall.allUserAccounts = [aUsers mutableCopy];
-        [self.callVC usersInfoUpdated];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.modal.currentCall.allUserAccounts = [aUsers mutableCopy];
+            [self.callVC usersInfoUpdated];
+        });
     }
 }
 
@@ -809,7 +811,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && !weakself.modal.hasJoinedChannel) {
             [weakself _stopConfirmTimer:callId];
             [weakself _stopAlertTimer:callId];
-            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteCancel];
+            [weakself callBackCallEnd:AgoraChatCallEndReasonRemoteCancel];
             weakself.modal.state = AgoraChatCallState_Idle;
             [weakself stopSound];
         } else {
@@ -846,10 +848,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                         weakself.modal.state = AgoraChatCallState_Answering;
                     } else {
                         if ([result isEqualToString:kRefuseresult]) {
-                            [weakself callBackCallEnd:AgoarChatCallEndReasonRemoteRefuse];
+                            [weakself callBackCallEnd:AgoraChatCallEndReasonRemoteRefuse];
                             weakself.modal.state = AgoraChatCallState_Unanswered;
                         } else if ([result isEqualToString:kBusyResult]) {
-                            [weakself callBackCallEnd:AgoarChatCallEndReasonBusy];
+                            [weakself callBackCallEnd:AgoraChatCallEndReasonBusy];
                             weakself.modal.state = AgoraChatCallState_Idle;
                         } else {
                             weakself.modal.state = AgoraChatCallState_Idle;
@@ -908,9 +910,9 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             } else {
                 // 已在其他端处理
                 if ([result isEqualToString:kAcceptResult]) {
-                    [weakself callBackCallEnd:AgoarChatCallEndReasonAnswerOtherDevice];
+                    [weakself callBackCallEnd:AgoraChatCallEndReasonAnswerOtherDevice];
                 } else {
-                    [weakself callBackCallEnd:AgoarChatCallEndReasonRefuseOtherDevice];
+                    [weakself callBackCallEnd:AgoraChatCallEndReasonRefuseOtherDevice];
                 }
                 weakself.modal.state = AgoraChatCallState_Idle;
                 [weakself stopSound];
@@ -982,7 +984,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     [self.callTimerDic removeObjectForKey:aRemoteUser];
     [self sendCancelCallMsgToCallee:aRemoteUser callId:self.modal.currentCall.callId];
     if (self.modal.currentCall.callType != AgoraChatCallTypeMultiVideo && self.modal.currentCall.callType != AgoraChatCallTypeMultiAudio) {
-        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
+        [self callBackCallEnd:AgoraChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Unanswered;
     } else {
         __weak typeof(self) weakself = self;
@@ -1062,7 +1064,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     NSString *callId = (NSString*)[tm userInfo];
     NSLog(@"_timeoutConfirm,callId:%@",callId);
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
-        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
+        [self callBackCallEnd:AgoraChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Idle;
     }
 }
@@ -1095,7 +1097,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     NSLog(@"_timeoutConfirm,callId:%@",callId);
     [self stopSound];
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
-        [self callBackCallEnd:AgoarChatCallEndReasonNoResponse];
+        [self callBackCallEnd:AgoraChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Idle;
     }
 }
@@ -1184,7 +1186,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         [[self getMultiVC] removeRemoteViewForUser:@(uid)];
         [self.modal.currentCall.allUserAccounts removeObjectForKey:@(uid)];
     } else {
-        [self callBackCallEnd:AgoarChatCallEndReasonHangup];
+        [self callBackCallEnd:AgoraChatCallEndReasonHangup];
         self.modal.state = AgoraChatCallState_Idle;
     }
 }
@@ -1274,7 +1276,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 #pragma mark - 提供delegate
 
-- (void)callBackCallEnd:(AgoarChatCallEndReason)reason
+- (void)callBackCallEnd:(AgoraChatCallEndReason)reason
 {
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -1330,17 +1332,17 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
                 [self.callTimerDic removeAllObjects];
             }
         }
-        [self callBackCallEnd:AgoarChatCallEndReasonHangup];
+        [self callBackCallEnd:AgoraChatCallEndReasonHangup];
     } else if (self.modal.state == AgoraChatCallState_Outgoing) {
         // 取消呼叫
         [self _stopCallTimer:self.modal.currentCall.remoteUserAccount];
         [self sendCancelCallMsgToCallee:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId];
-        [self callBackCallEnd:AgoarChatCallEndReasonCancel];
+        [self callBackCallEnd:AgoraChatCallEndReasonCancel];
     } else if (self.modal.state == AgoraChatCallState_Alerting) {
         // 拒绝
         [self stopSound];
         [self sendAnswerMsg:self.modal.currentCall.remoteUserAccount callId:self.modal.currentCall.callId result:kRefuseresult devId:self.modal.currentCall.remoteCallDevId];
-        [self callBackCallEnd:AgoarChatCallEndReasonRefuse];
+        [self callBackCallEnd:AgoraChatCallEndReasonRefuse];
     }
     self.modal.state = AgoraChatCallState_Idle;
 }

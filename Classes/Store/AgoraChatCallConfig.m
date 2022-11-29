@@ -72,15 +72,19 @@
 
 - (void)setUsers:(NSMutableDictionary<NSString *,AgoraChatCallUser *> *)users
 {
-    _users = [users mutableCopy];
-    [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        _users = [users mutableCopy];
+        [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
+    });
 }
 
 - (void)setUser:(NSString*)aUser info:(AgoraChatCallUser*)aInfo
 {
     if (aUser.length > 0 && aInfo) {
-        [self.users setObject:aInfo forKey:aUser];
-        [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.users setObject:aInfo forKey:aUser];
+            [NSNotificationCenter.defaultCenter postNotificationName:@"AgoraChatCallUserUpdated" object:nil];
+        });
     }
 }
 
