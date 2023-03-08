@@ -101,7 +101,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         self.agoraKit = [AgoraRtcEngineKit sharedEngineWithAppId:self.config.agoraAppId delegate:self];
         [self.agoraKit setChannelProfile:AgoraChannelProfileLiveBroadcasting];
         [self.agoraKit setClientRole:AgoraClientRoleBroadcaster];
-        [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 report_vad:NO];
+        [self.agoraKit enableAudioVolumeIndication:1000 smooth:5 reportVad:NO];
         
         AgoraCameraCapturerConfiguration *cameraConfig = [[AgoraCameraCapturerConfiguration alloc] init];
         cameraConfig.cameraDirection = AgoraCameraDirectionFront;
@@ -184,7 +184,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)startInviteUsers:(NSArray<NSString *> *)aUsers groupId:(NSString *)groupId callType:(AgoraChatCallType)callType ext:(NSDictionary *)aExt completion:(void(^)(NSString *callId, AgoraChatCallError *))aCompletionBlock {
     if (aUsers.count == 0) {
-        NSLog(@"InviteUsers faild!!remoteUid is empty");
+        [AgoraChatClient.sharedClient log:@"InviteUsers faild!!remoteUid is empty"];
         if (aCompletionBlock) {
             AgoraChatCallError *error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
             aCompletionBlock(nil,error);
@@ -196,7 +196,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     __weak typeof(self) weakself = self;
     dispatch_async(weakself.workQueue, ^{
         if (weakself.modal.currentCall && weakself.callVC) {
-            NSLog(@"inviteUsers in group");
+            [AgoraChatClient.sharedClient log:@"inviteUsers in group"];
             NSArray<NSString *> *joinedUsernameList = [self getJoinedUsernameList];
             
             for (NSString *uId in aUsers) {
@@ -241,7 +241,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)startSingleCallWithUId:(NSString*)uId type:(AgoraChatCallType)aType ext:(NSDictionary*)aExt completion:(void (^)(NSString* callId,AgoraChatCallError*))aCompletionBlock {
     if (uId.length <= 0) {
-        NSLog(@"makeCall faild!!remoteUid is empty");
+        [AgoraChatClient.sharedClient log:@"makeCall faild!!remoteUid is empty"];
         if (aCompletionBlock) {
             AgoraChatCallError *error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeInvalidParams description:@"Require remoteUid"];
             aCompletionBlock(nil,error);
@@ -254,7 +254,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     dispatch_async(weakself.workQueue, ^{
         AgoraChatCallError * error = nil;
         if ([self isBusy]) {
-            NSLog(@"makeCall faild!!current is busy");
+            [AgoraChatClient.sharedClient log:@"makeCall faild!!current is busy"];
             if (aCompletionBlock) {
                 error = [AgoraChatCallError errorWithType:AgoarChatCallErrorTypeProcess code:AgoraChatCallProcessErrorCodeBusy description:@"current is busy "];
                 aCompletionBlock(nil,error);
@@ -294,11 +294,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)clearResWithViewController:(BOOL)withViewController
 {
-    NSLog(@"cleraRes");
+    [AgoraChatClient.sharedClient log:@"cleraRes"];
     dispatch_async(self.workQueue, ^{
         self.modal.hasJoinedChannel = NO;
         [self.agoraKit leaveChannel:^(AgoraChannelStats * _Nonnull stat) {
-            NSLog(@"leaveChannel");
+            [AgoraChatClient.sharedClient log:@"leaveChannel"];
             //[[EMClient sharedClient] log:@"leaveChannel"];
         }];
     });
@@ -315,7 +315,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             self.callVC = nil;
         }
     }
-    NSLog(@"invite timer count:%lu",(unsigned long)self.callTimerDic.count);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"invite timer count:%lu",(unsigned long)self.callTimerDic.count]];
     NSArray *timers = [self.callTimerDic allValues];
     for (NSTimer *tm in timers) {
         [tm invalidate];
@@ -448,7 +448,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 #pragma mark - AgoraChatCallModalDelegate
 - (void)callStateWillChangeTo:(AgoraChatCallState)newState from:(AgoraChatCallState)preState
 {
-    NSLog(@"callState will chageto:%ld from:%ld",newState,(long)preState);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"callState will chageto:%ld from:%ld",newState,(long)preState]];
     dispatch_async(dispatch_get_main_queue(), ^{
         self.callVC.callState = newState;
         switch (newState) {
@@ -958,7 +958,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     dispatch_async(dispatch_get_main_queue(), ^{
         if([weakself.callTimerDic objectForKey:aRemoteUser])
             return;
-        NSLog(@"_startCallTimer,user:%@",aRemoteUser);
+        [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_startCallTimer,user:%@",aRemoteUser]];
         NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:self.config.callTimeOut target:weakself selector:@selector(_timeoutCall:) userInfo:aRemoteUser repeats:NO];
         [weakself.callTimerDic setObject:timer forKey:aRemoteUser];
     });
@@ -970,7 +970,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     dispatch_async(dispatch_get_main_queue(), ^{
         NSTimer *tm = [weakself.callTimerDic objectForKey:aRemoteUser];
         if (tm) {
-            NSLog(@"stopCallTimer:%@",aRemoteUser);
+            [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"stopCallTimer:%@",aRemoteUser]];
             [tm invalidate];
             [weakself.callTimerDic removeObjectForKey:aRemoteUser];
         }
@@ -980,7 +980,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)_timeoutCall:(NSTimer*)timer
 {
     NSString *aRemoteUser = (NSString*)[timer userInfo];
-    NSLog(@"_timeoutCall,user:%@",aRemoteUser);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_timeoutCall,user:%@",aRemoteUser]];
     [self.callTimerDic removeObjectForKey:aRemoteUser];
     [self sendCancelCallMsgToCallee:aRemoteUser callId:self.modal.currentCall.callId];
     if (self.modal.currentCall.callType != AgoraChatCallTypeMultiVideo && self.modal.currentCall.callType != AgoraChatCallTypeMultiAudio) {
@@ -996,7 +996,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)_startAlertTimer:(NSString*)callId
 {
-    NSLog(@"_startAlertTimer,callId:%@",callId);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_startAlertTimer,callId:%@",callId]];
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         NSTimer *tm = [NSTimer scheduledTimerWithTimeInterval:10.0 target:self selector:@selector(_timeoutAlert:) userInfo:callId repeats:NO];
@@ -1006,7 +1006,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)_stopAlertTimer:(NSString*)callId
 {
-    NSLog(@"_stopAlertTimer,callId:%@",callId);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_stopAlertTimer,callId:%@",callId]];
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         NSTimer *tm = [weakself.alertTimerDic objectForKey:callId];
@@ -1019,7 +1019,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)_stopAllAlertTimer
 {
-    NSLog(@"_stopAllAlertTimer");
+    [AgoraChatClient.sharedClient log:@"_stopAllAlertTimer"];
     __weak typeof(self) weakself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         NSArray *tms = [weakself.alertTimerDic allValues];
@@ -1033,7 +1033,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)_timeoutAlert:(NSTimer*)tm
 {
     NSString* callId = (NSString*)[tm userInfo];
-    NSLog(@"_timeoutAlert,callId:%@",callId);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_timeoutAlert,callId:%@",callId]];
     [self.alertTimerDic removeObjectForKey:callId];
 }
 
@@ -1062,7 +1062,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)_timeoutConfirm:(NSTimer*)tm
 {
     NSString *callId = (NSString*)[tm userInfo];
-    NSLog(@"_timeoutConfirm,callId:%@",callId);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_timeoutConfirm,callId:%@",callId]];
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
         [self callBackCallEnd:AgoraChatCallEndReasonNoResponse];
         self.modal.state = AgoraChatCallState_Idle;
@@ -1094,7 +1094,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 - (void)_timeoutRing:(NSTimer*)tm
 {
     NSString *callId = (NSString*)[tm userInfo];
-    NSLog(@"_timeoutConfirm,callId:%@",callId);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"_timeoutConfirm,callId:%@",callId]];
     [self stopSound];
     if (self.modal.currentCall && [self.modal.currentCall.callId isEqualToString:callId]) {
         [self callBackCallEnd:AgoraChatCallEndReasonNoResponse];
@@ -1137,7 +1137,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 #pragma mark - AgoraRtcEngineKitDelegate
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine didOccurError:(AgoraErrorCode)errorCode
 {
-    NSLog(@"rtcEngine didOccurError:%ld",(long)errorCode);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"rtcEngine didOccurError:%ld",(long)errorCode]];
     if (errorCode == AgoraErrorCodeTokenExpired || errorCode == AgoraErrorCodeInvalidToken) {
         self.modal.state = AgoraChatCallState_Idle;
         [self callBackError:AgoarChatCallErrorTypeRTC code:errorCode description:@"RTC Error"];
@@ -1157,7 +1157,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 // 加入频道成功
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine didJoinChannel:(NSString *)channel withUid:(NSUInteger)uid elapsed:(NSInteger)elapsed
 {
-    NSLog(@"join channel success!!! channel:%@,uid:%lu",channel,(unsigned long)uid);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"join channel success!!! channel:%@,uid:%lu",channel,(unsigned long)uid]];
 }
 
 // 注册账户成功
@@ -1245,12 +1245,12 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)rtcEngine:(AgoraRtcEngineKit *)engine firstRemoteAudioFrameOfUid:(NSUInteger)uid elapsed:(NSInteger)elapsed
 {
-    NSLog(@"firstRemoteAudioFrameOfUid:%lu",(unsigned long)uid);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"firstRemoteAudioFrameOfUid:%lu",(unsigned long)uid]];
 }
 
-- (void)rtcEngine:(AgoraRtcEngineKit *)engine remoteVideoStateChangedOfUid:(NSUInteger)uid state:(AgoraVideoRemoteState)state reason:(AgoraVideoRemoteStateReason)reason elapsed:(NSInteger)elapsed
+- (void)rtcEngine:(AgoraRtcEngineKit * _Nonnull)engine remoteVideoStateChangedOfUid:(NSUInteger)uid state:(AgoraVideoRemoteState)state reason:(AgoraVideoRemoteReason)reason elapsed:(NSInteger)elapsed
 {
-    NSLog(@"remoteVideoStateChangedOfUid uid:%d staate:%d,reason:%d", uid, state,reason);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"remoteVideoStateChangedOfUid uid:%d staate:%d,reason:%d", uid, state,reason]];
 //    if (reason == AgoraVideoRemoteStateReasonRemoteMuted && self.modal.currentCall.callType == AgoraChatCallType1v1Video) {
 //        __weak typeof(self) weakself = self;
 //        dispatch_async(dispatch_get_main_queue(), ^{
@@ -1306,7 +1306,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             self.modal.agoraUid = arc4random();
             [self.delegate callDidRequestRTCTokenForAppId:self.config.agoraAppId channelName:self.modal.currentCall.channelName account:AgoraChatClient.sharedClient.currentUsername uid:self.config.agoraUid];
         } else {
-            NSLog(@"Warning: You have not implement interface callDidRequestRTCTokenForAppId:channelName:account:!!!!");
+            [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"Warning: You have not implement interface callDidRequestRTCTokenForAppId:channelName:account:!!!!"]];
         }
     } else {
         [self setRTCToken:nil channelName:self.modal.currentCall.channelName uid:arc4random()];
@@ -1320,7 +1320,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
 
 - (void)hangupAction
 {
-    NSLog(@"hangupAction,curState:%ld", (long)self.modal.state);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"hangupAction,curState:%ld", (long)self.modal.state]];
     if (self.modal.state == AgoraChatCallState_Answering) {
         // 正常挂断
         if (self.modal.currentCall.callType == AgoraChatCallTypeMultiVideo || self.modal.currentCall.callType == AgoraChatCallTypeMultiAudio) {
@@ -1477,7 +1477,7 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
             [weakself.agoraKit leaveChannel:nil];
         }
         [weakself.agoraKit joinChannelByToken:weakself.modal.agoraRTCToken channelId:weakself.modal.currentCall.channelName info:@"" uid:self.modal.agoraUid joinSuccess:^(NSString * _Nonnull channel, NSUInteger uid, NSInteger elapsed) {
-            NSLog(@"join success");
+            [AgoraChatClient.sharedClient log:@"join success"];
             if ([weakself.delegate respondsToSelector:@selector(callDidJoinChannel:uid:)]) {
                 [weakself.delegate callDidJoinChannel:channel uid:uid];
             }

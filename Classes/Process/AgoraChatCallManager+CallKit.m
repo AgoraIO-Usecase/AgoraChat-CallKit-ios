@@ -75,7 +75,6 @@ static AgoraChatCallKitModel *callKitModel;
     
     callKitCurrentCallUUID = [NSUUID UUID];
     [self.provider reportNewIncomingCallWithUUID:callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
-        NSLog(@"%@", error);
     }];
 }
 
@@ -166,14 +165,14 @@ static AgoraChatCallKitModel *callKitModel;
 {
     [AgoraChatClient.sharedClient registerPushKitToken:pushCredentials.token completion:^(AgoraChatError *aError) {
         if (aError) {
-            NSLog(@"AgoraChatClient registerPushKitToken error: %@", aError.description);
+            [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"AgoraChatClient registerPushKitToken error: %@", aError.description]];
         }
     }];
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry didInvalidatePushTokenForType:(PKPushType)type
 {
-    NSLog(@"PushKit %s type=%d", __FUNCTION__, type);
+    [AgoraChatClient.sharedClient log:[NSString stringWithFormat:@"PushKit %s type=%d", __FUNCTION__, type]];
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(void (^)(void))completion
@@ -203,7 +202,6 @@ static AgoraChatCallKitModel *callKitModel;
     
     callKitCurrentCallUUID = NSUUID.UUID;
     [self.provider reportNewIncomingCallWithUUID:callKitCurrentCallUUID update:update completion:^(NSError * _Nullable error) {
-        NSLog(@"%@", error);
     }];
     completion();
 }

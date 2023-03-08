@@ -61,11 +61,7 @@
 - (AgoraVideoEncoderConfiguration*)encoderConfiguration
 {
     if(!_encoderConfiguration) {
-        _encoderConfiguration = [[AgoraVideoEncoderConfiguration alloc]
-                                 initWithSize:AgoraVideoDimension640x360
-                                 frameRate:AgoraVideoFrameRateFps15
-                                 bitrate:AgoraVideoBitrateStandard
-                                 orientationMode:AgoraVideoOutputOrientationModeAdaptative];
+        _encoderConfiguration = [[AgoraVideoEncoderConfiguration alloc] initWithSize:AgoraVideoDimension640x360 frameRate:AgoraVideoFrameRateFps15 bitrate:AgoraVideoBitrateStandard orientationMode:AgoraVideoOutputOrientationModeAdaptative mirrorMode:AgoraVideoMirrorModeAuto];
     }
     return _encoderConfiguration;
 }
