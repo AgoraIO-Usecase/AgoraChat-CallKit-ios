@@ -290,22 +290,22 @@
         if (!_voiceStatusView.hidden) {
             [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.right.equalTo(@(-right));
-                make.width.height.equalTo(@20);
+                make.width.height.equalTo(@16);
                 make.bottom.equalTo(@(-7));
             }];
-            right += 27;
+            right += 22;
         }
         if (!_videoStatusView.hidden) {
             [_videoStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.right.equalTo(@(-right));
-                make.width.height.equalTo(@20);
+                make.width.height.equalTo(@16);
                 make.bottom.equalTo(@(-7));
             }];
         }
     } else if (_model.callType == AgoraChatCallTypeMultiAudio) {
         _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"audio_call_microphone_close"];
         [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@20);
+            make.width.height.equalTo(@16);
             make.right.bottom.equalTo(_avatarImageView);
         }];
     }
