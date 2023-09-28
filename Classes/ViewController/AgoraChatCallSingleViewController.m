@@ -474,6 +474,20 @@
         [self.contentView insertSubview:_remoteView atIndex:0];
         [_remoteView update];
         [self updateStreamViewLayout];
+    } else {
+        if(aVideoView.frame.size.width < 200) {
+            AgoraChatCallStreamView *otherView = aVideoView == self.localView?self.remoteView:self.localView;
+            CGRect rc1 = aVideoView.frame;
+            CGRect rc2 = otherView.frame;
+            otherView.frame = rc1;
+            otherView.model.isMini = YES;
+            aVideoView.frame = rc2;
+            aVideoView.model.isMini = NO;
+            [aVideoView update];
+            [otherView update];
+            [self.contentView sendSubviewToBack:aVideoView];
+            [self.contentView bringSubviewToFront:otherView];
+        }
     }
 }
 
