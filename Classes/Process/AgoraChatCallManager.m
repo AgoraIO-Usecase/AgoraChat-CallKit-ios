@@ -808,17 +808,11 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
     };
     void (^parseCancelCallMsgExt)(NSDictionary *) = ^void (NSDictionary *ext) {
         //[[EMClient sharedClient] log:[NSString stringWithFormat:@"parseCancelCallMsgExt currentCallId:%@,state:%ld",weakself.modal.currentCall.callId,(long)weakself.modal.state]];
-        if (weakself.modal.currentCall && [weakself.modal.currentCall.callId isEqualToString:callId] && !weakself.modal.hasJoinedChannel) {
-            [weakself _stopConfirmTimer:callId];
-            [weakself _stopAlertTimer:callId];
-            [weakself callBackCallEnd:AgoraChatCallEndReasonRemoteCancel];
-            weakself.modal.state = AgoraChatCallState_Idle;
-            [weakself stopSound];
-        } else {
-            [weakself.modal.recvCalls removeObjectForKey:callId];
-            [weakself _stopAlertTimer:callId];
-            [weakself didRecvCancelMessage:callId];
-        }
+        [weakself _stopConfirmTimer:callId];
+        [weakself _stopAlertTimer:callId];
+        [weakself callBackCallEnd:AgoraChatCallEndReasonRemoteCancel];
+        weakself.modal.state = AgoraChatCallState_Idle;
+        [weakself stopSound];
     };
     void (^parseAnswerMsgExt)(NSDictionary *) = ^void (NSDictionary *ext) {
         //[[EMClient sharedClient] log:[NSString stringWithFormat:@"parseAnswerMsgExt currentCallId:%@,state:%ld",weakself.modal.currentCall.callId,weakself.modal.state]];
