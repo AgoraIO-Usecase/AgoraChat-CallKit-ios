@@ -195,7 +195,8 @@
 {
     [_showUserList removeAllObjects];
     for (AgoraChatCallStreamViewModel *model in _allUserList) {
-        if (model.showUsername.length > 0) {
+        //if (model.showUsername.length > 0)
+        {
             [_showUserList addObject:model];
         }
     }
