@@ -65,7 +65,7 @@
         [self.contentView addSubview:_speakingView];
         
         _avatarImageView = [[UIImageView alloc] init];
-        _avatarImageView.contentMode = UIViewContentModeScaleAspectFit;
+//        _avatarImageView.contentMode = UIViewContentModeScaleAspectFit;
         _avatarImageView.layer.masksToBounds = YES;
         [self.contentView addSubview:_avatarImageView];
         [_speakingView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -254,11 +254,11 @@
         _avatarImageView.layer.cornerRadius = 40;
         [_avatarImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
             make.width.height.equalTo(@80);
-            make.top.equalTo(@18);
+            make.top.equalTo(self).offset(2);
             make.centerX.equalTo(self.contentView);
         }];
         [_nameLabel mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(_avatarImageView.mas_bottom).offset(12);
+            make.top.equalTo(_avatarImageView.mas_bottom).offset(4);
             make.centerX.equalTo(_avatarImageView);
         }];
     }
@@ -290,22 +290,22 @@
         if (!_voiceStatusView.hidden) {
             [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.right.equalTo(@(-right));
-                make.width.height.equalTo(@16);
+                make.width.height.equalTo(@20);
                 make.bottom.equalTo(@(-7));
             }];
-            right += 22;
+            right += 27;
         }
         if (!_videoStatusView.hidden) {
             [_videoStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.right.equalTo(@(-right));
-                make.width.height.equalTo(@16);
+                make.width.height.equalTo(@20);
                 make.bottom.equalTo(@(-7));
             }];
         }
     } else if (_model.callType == AgoraChatCallTypeMultiAudio) {
         _voiceStatusView.image = [UIImage agoraChatCallKit_imageNamed:@"audio_call_microphone_close"];
         [_voiceStatusView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.equalTo(@16);
+            make.width.height.equalTo(@20);
             make.right.bottom.equalTo(_avatarImageView);
         }];
     }
