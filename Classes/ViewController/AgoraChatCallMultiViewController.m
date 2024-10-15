@@ -67,19 +67,6 @@
 {
     [super viewDidLoad];
     
-    __weak typeof(self)weakSelf = self;
-    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-    dispatch_source_set_timer(_timer, DISPATCH_TIME_NOW, 0.1, 0);
-    dispatch_source_set_event_handler(_timer, ^{
-        CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
-        [weakSelf.isTalkingDictionary enumerateKeysAndObjectsUsingBlock:^(NSNumber * _Nonnull key, NSNumber * _Nonnull obj, BOOL * _Nonnull stop) {
-            if (now - obj.doubleValue >= 0.3 || now < obj.doubleValue) {
-                [weakSelf setUser:key isTalking:NO];
-                [weakSelf.isTalkingDictionary removeObjectForKey:key];
-            }
-        }];
-    });
-    dispatch_resume(_timer);
     
     [self setupSubViews];
     [self _refreshViewPos];
@@ -191,13 +178,15 @@
     [_collectionView reloadData];
 }
 
+
+
 - (void)updateShowUserList
 {
     [_showUserList removeAllObjects];
     for (AgoraChatCallStreamViewModel *model in _allUserList) {
-        if (model.showUsername.length > 0) {
+//        if (model.showUsername.length > 0) {
             [_showUserList addObject:model];
-        }
+//        }
     }
 }
 
@@ -508,7 +497,7 @@
     NSString *timeStr = [NSString stringWithFormat:@"%02d:%02d", min, sec];
     if (self.isJoined && self.isMini) {
         _miniView.model.showUsername = timeStr;
-        [_miniView update];
+//        [_miniView update];
     }
     _timeLabel.text = timeStr;
 }
@@ -518,9 +507,14 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         BOOL needRefresh = NO;
         NSMutableArray *removeList = [NSMutableArray array];
-        for (AgoraChatCallStreamViewModel *model in _allUserList) {
+//        for (NSString *key in [[AgoraChatCallManager.sharedManager getAgoraChatCallConfig].users allKeys]) {
+//            AgoraChatCallUser *user = [[AgoraChatCallManager.sharedManager getAgoraChatCallConfig].users objectForKey:key];
+//            NSLog(@"config user:%@ value userName: %@",key,user.nickName);
+//        }
+        for (AgoraChatCallStreamViewModel *model in self.allUserList) {
+//            NSLog(@"usersInfoUpdated uid:%ld",model.uid);
             NSString *username = [AgoraChatCallManager.sharedManager getUserNameByUid:@(model.uid)];
-            if (username) {
+            if (username && ![username isEqualToString:@""]) {
                 AgoraChatCallStreamViewModel *unjoinedModel = _unjoinedUserDictionary[username];
                 if (unjoinedModel && _joinedUserDictionary[@(model.uid)]) {
                     [_unjoinedUserDictionary removeObjectForKey:username];
@@ -532,6 +526,7 @@
                 model.agoraUsername = username;
                 model.showUsername = [AgoraChatCallManager.sharedManager getNicknameByUserName:username];
                 model.showUserHeaderURL = [AgoraChatCallManager.sharedManager getHeadImageByUserName:username];
+//                NSLog(@"AgoraChatCallStreamViewModel uid:%ld  userId: agoraUserName%@",model.uid,model.showUsername,model.agoraUsername);
             }
         }
         [_allUserList removeObjectsInArray:removeList];

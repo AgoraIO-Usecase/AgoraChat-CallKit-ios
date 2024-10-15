@@ -1478,6 +1478,10 @@ static AgoraChatCallManager *agoraChatCallManager = nil;
         }
         [weakself.agoraKit joinChannelByToken:weakself.modal.agoraRTCToken channelId:weakself.modal.currentCall.channelName info:@"" uid:self.modal.agoraUid joinSuccess:^(NSString * _Nonnull channel, NSUInteger uid, NSInteger elapsed) {
             [AgoraChatClient.sharedClient log:@"join success"];
+            if (weakself.modal.currentCall.callType >= AgoraChatCallTypeMultiVideo) {
+                [[weakself getMultiVC] removeRemoteViewForUser:[NSNumber numberWithInteger:0]];
+                [[weakself getMultiVC] addMember:[NSNumber numberWithInteger:uid] username: AgoraChatClient.sharedClient.currentUsername enableVideo:weakself.modal.currentCall.callType == AgoraChatCallTypeMultiVideo];
+            }
             if ([weakself.delegate respondsToSelector:@selector(callDidJoinChannel:uid:)]) {
                 [weakself.delegate callDidJoinChannel:channel uid:uid];
             }
